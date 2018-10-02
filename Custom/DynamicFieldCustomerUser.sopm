@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otrs_package version="1.0">
+    <Name>DynamicFieldCustomerUser</Name>
+    <Version>6.0.0</Version>
+    <Framework>6.0.x</Framework>
+    <Vendor>Ligero</Vendor>
+    <URL>http://www.complemento.net.br/</URL>
+    <License>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</License>
+    <Description Lang="en">DynamicFieldCustomerUser.</Description>
+    <Description Lang="pt_BR">DynamicFieldCustomerUser.</Description>
+    <IntroInstall Type="post" Lang="en" Title="Attention!">DynamicFieldCustomerUser.</IntroInstall>
+    <Filelist>
+        <File Location="Custom/DynamicFieldCustomerUser.sopm" Permission="644"></File>
+        <File Location="Kernel/Config/Files/XML/DynamicFieldCustomerUser.xml" Permission="644"></File>
+        <File Location="Kernel/Language/de_DynamicFieldCustomerUser.pm" Permission="644"></File>
+        <File Location="Kernel/Modules/AdminDynamicFieldCustomerUser.pm" Permission="644"></File>
+        <File Location="Kernel/Modules/DynamicFieldCustomerUserAJAXHandler.pm" Permission="644"></File>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldCustomerUser.tt" Permission="644"></File>
+        <File Location="Kernel/System/DynamicField/Driver/CustomerUserReference.pm" Permission="644"></File>
+        <File Location="Kernel/System/Ticket/Event/CustomerUserLinkAdd.pm" Permission="644"></File>
+        <File Location="var/httpd/htdocs/js/DynamicFieldCustomerUser.js" Permission="644"></File>
+        <File Location="var/packagesetup/DynamicFieldCustomerUser.pm" Permission="644"></File>
+    </Filelist>
+    <CodeInstall>
+        <![CDATA[
+            my $CodeModule = 'var::packagesetup::' . $Param{Structure}->{Name}->{Content}; $Kernel::OM->Get($CodeModule)->CodeInstall();
+        ]]>
+    </CodeInstall>
+    <CodeReinstall>
+        <![CDATA[
+            my $CodeModule = 'var::packagesetup::' . $Param{Structure}->{Name}->{Content}; $Kernel::OM->Get($CodeModule)->CodeReinstall();
+        ]]>
+    </CodeReinstall>
+    <CodeUpgrade Type="post">
+        <![CDATA[
+            my $CodeModule = 'var::packagesetup::' . $Param{Structure}->{Name}->{Content}; # discard internally stored object, so that the next access to object creates them newly $Kernel::OM->ObjectsDiscard( Objects => [$CodeModule], ForcePackageReload => 1, ); $Kernel::OM->Get($CodeModule)->CodeUpgrade();
+        ]]>
+    </CodeUpgrade>
+    <CodeUpgrade Type="post" Version="4.99.80">
+        <![CDATA[
+            my $CodeModule = 'var::packagesetup::' . $Param{Structure}->{Name}->{Content}; # discard internally stored object, so that the next access to object creates them newly $Kernel::OM->ObjectsDiscard( Objects => [$CodeModule], ForcePackageReload => 1, ); $Kernel::OM->Get($CodeModule)->CodeUpgrade_5();
+        ]]>
+    </CodeUpgrade>
+    <CodeUninstall Type="pre">
+        <![CDATA[
+            my $CodeModule = 'var::packagesetup::' . $Param{Structure}->{Name}->{Content}; $Kernel::OM->Get($CodeModule)->CodeUninstall();
+        ]]>
+    </CodeUninstall>
+    <CodeUninstall Type="post">
+        <![CDATA[
+            # remove SysConfig to reload XML-Files $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::System::SysConfig'], ); # write new default sysconfig... $Kernel::OM->Get('Kernel::System::SysConfig')->WriteDefault(); my @ZZZFiles = ( 'ZZZAAuto.pm', 'ZZZAuto.pm', ); # reload the ZZZ files (mod_perl workaround) for my $ZZZFile (@ZZZFiles) { PREFIX: for my $Prefix (@INC) { my $File = $Prefix . '/Kernel/Config/Files/' . $ZZZFile; if ( !-f $File ) { next PREFIX } do $File; last PREFIX; } } # remove Config to use new defaults $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Config'], );
+        ]]>
+    </CodeUninstall>
+</otrs_package>

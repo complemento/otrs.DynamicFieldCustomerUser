@@ -69,7 +69,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             minLength: Identifiers[Identifier]['MinQueryLength'],
             source: function (Request, Response) {
                 var Data = {};
-                Data.Action         = 'DynamicFieldITSMConfigItemAJAXHandler';
+                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
                 Data.Subaction      = 'Search';
                 Data.Search         = Request.term;
                 Data.DynamicFieldID = IdentifierID;
@@ -117,15 +117,15 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     + UI.item.value
                     + '</div>'
                     + '<div class="Remove"><a href="#" role="button" title="'
-                    + Core.Config.Get('DynamicFieldITSMConfigItem.TranslateRemoveSelection')
+                    + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
                     + '" tabindex="-1" aria-label="'
-                    + Core.Config.Get('DynamicFieldITSMConfigItem.TranslateRemoveSelection')
+                    + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
                     + ': '
                     + UI.item.value
                     + '">x</a></div><div class="Clear"></div>'
                     + '</div>'
                 );
-                DynamicFieldITSMConfigItem.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
+                DynamicFieldCustomerUser.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
                 $(Identifiers[Identifier]['ContainerFieldID']).show();
                 $(Identifiers[Identifier]['ContainerFieldID'] + ' > .InputField_Dummy').remove();
                 $(Identifiers[Identifier]['AutoCompleteFieldID']).val('');
@@ -169,7 +169,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             }
 
             var Data = {};
-            Data.Action         = 'DynamicFieldITSMConfigItemAJAXHandler';
+            Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
             Data.Subaction      = 'AddValue';
             Data.Key            = $(Identifiers[Identifier]['FieldID']).val();
             Data.DynamicFieldID = IdentifierID;
@@ -212,15 +212,15 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                             + Result.Value
                             + '</div>'
                             + '<div class="Remove"><a href="#" role="button" title="'
-                            + Core.Config.Get('DynamicFieldITSMConfigItem.TranslateRemoveSelection')
+                            + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
                             + '" tabindex="-1" aria-label="'
-                            + Core.Config.Get('DynamicFieldITSMConfigItem.TranslateRemoveSelection')
+                            + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
                             + ': '
                             + Result.Value
                             + '">x</a></div><div class="Clear"></div>'
                             + '</div>'
                         );
-                        DynamicFieldITSMConfigItem.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
+                        DynamicFieldCustomerUser.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
                         $(Identifiers[Identifier]['ContainerFieldID']).show();
                         $(Identifiers[Identifier]['ContainerFieldID'] + ' > .InputField_Dummy').remove();
                         $(Identifiers[Identifier]['AutoCompleteFieldID']).val('');
@@ -254,7 +254,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         Core.App.Subscribe('Event.AJAX.FormUpdate.Callback', function (Request, Response) {
             if ($('.InputField_Selection > input[name=' + Identifier + ']').length > 0) {
                 var Data = {};
-                Data.Action         = 'DynamicFieldITSMConfigItemAJAXHandler';
+                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
                 Data.Subaction      = 'PossibleValueCheck';
                 Data.DynamicFieldID = IdentifierID;
 
@@ -334,7 +334,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     /**
      * @private
      * @name CheckInputFields
-     * @memberof DynamicFieldITSMConfigItem
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @param {String} Identifier - The name of the field
      * @returns nothing
@@ -355,7 +355,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     /**
      * @private
      * @name SerializeForm
-     * @memberof DynamicFieldITSMConfigItem
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @returns {String} The query string.
      * @param {jQueryObject} $Element - The jQuery object of the form  or any element within this form that should be serialized
@@ -402,7 +402,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     /**
      * @private
      * @name GetSessionInformation
-     * @memberof DynamicFieldITSMConfigItem
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @returns {Object} Hash with session data, if needed.
      * @description
@@ -419,4 +419,4 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     }
 
     return TargetNS;
-}(DynamicFieldITSMConfigItem || {}));
+}(DynamicFieldCustomerUser || {}));

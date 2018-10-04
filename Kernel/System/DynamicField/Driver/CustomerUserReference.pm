@@ -444,6 +444,8 @@ sub EditFieldRender {
         $FieldClass .= ' ServerError';
     }
 
+    
+
     # check value
     my $SelectedValuesArrayRef = [];
     if ( defined $Value ) {
@@ -499,56 +501,72 @@ sub EditFieldRender {
 
     my $TranslateRemoveSelection = $Param{LayoutObject}->{LanguageObject}->Translate("Remove selection");
 
+    my $FromInvalid = "";
+    my $CustomerHiddenContainer = "Hidden";
+
     my $HTMLString = <<"END";
-    <input id="$FieldName" type="text" style="display:none;" />
-    <div class="InputField_Container W50pc">
-        <input id="$AutoCompleteFieldName" type="text" style="margin-bottom:2px;" />
-        <div class="Clear"></div>
-        <div id="$ContainerFieldName" class="InputField_InputContainer" style="display:block;">
+    <div class="Field">
+        <input id="$FieldName" type="text" name="$FieldName" value="" class="CustomerAutoComplete W75pc $FromInvalid" autocomplete="off" />
+        <div id="FromCustomerServerError" class="TooltipErrorMessage">
+        </div>
+    </div>
+    <div class="Field $CustomerHiddenContainer">
+        <div class="CustomerTicketTemplateFromCustomer SpacingTopSmall Hidden">
+            <input name="CustomerSelected" title="Select this customer as the main customer. id="CustomerSelected" class="CustomerTicketRadio" type="radio" value=""/>
+            <input name="CustomerKey" id="CustomerKey" class="CustomerKey" type="hidden" value=""/>
+            <input class="CustomerTicketText Radio" title="Customer user name="CustomerTicketText" id="CustomerTicketText" type="text" value="" readonly="readonly" />
+            <a href="#" id="RemoveCustomerTicket" class="RemoveButton CustomerTicketRemove">
+                <i class="fa fa-minus-square-o"></i>
+                <span class="InvisibleText">Remove Ticket Customer User</span>
+            </a>
+        </div>
+        <div id="TicketCustomerContentFromCustomer" class="CustomerContainer">
 END
 
-    my $ValueCounter = 0;
-    for my $Key ( @{ $SelectedValuesArrayRef } ) {
-        next if (!$Key);
-        $ValueCounter++;
+    my $typeField = "Single customer";
+    my $CustomerSelected = "";
+    my $CustomerDisabled = "";
+    my $Count = "";
+    my $CustomerElement = "";
 
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
-        );
-
-        my $Label = $FieldConfig->{DisplayPattern} || '<CI_Name>';
-        while ($Label =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Label =~ s/<CI_$1>/$Replace/g;
-        }
-
-        my $Title = $ConfigItem->{Name};
-
+    if($typeField eq  "Multiple customers"){
         $HTMLString .= <<"END";
-        <div class="InputField_Selection" style="display:block;position:inherit;top:0px;">
-            <input id="$ValueFieldName$ValueCounter" type="hidden" name="$FieldName" value="$Key" />
-            <div class="Text" title="$Title">$Label</div><div class="Remove"><a href="#" role="button" title="$TranslateRemoveSelection" tabindex="-1" aria-label="$TranslateRemoveSelection: $Label">x</a></div>
-            <div class="Clear"></div>
-        </div>
+            <div class="SpacingTopSmall ">
+                <input name="CustomerSelected" title="Select this customer as the main customer." id="CustomerSelected" class="CustomerTicketRadio" type="radio" value="$Count" $CustomerSelected  $CustomerDisabled />
+                <input name="CustomerKey_[% Data.Count | html %]" id="CustomerKey_[% Data.Count | html %]" class="CustomerKey" type="hidden" value="[% Data.CustomerKey | html %]"/>
+                <input class="CustomerTicketText Radio" title="Customer user name="CustomerTicketText_$Count" id="CustomerTicketText_$Count" type="text" value="$CustomerElement" readonly="readonly" />
+                <a href="#" id="RemoveCustomerTicket_[% Data.Count %]" class="RemoveButton CustomerTicketRemove">
+                    <i class="fa fa-minus-square-o"></i>
+                    <span class="InvisibleText">Remove Ticket Customer User</span>
+                </a>
+            </div>
 END
     }
+
+    $HTMLString .= "</div>";
+
+    my $MultipleCustomerCounter = 0;
+    my $CustomerCounter = 0;
+
+    if($MultipleCustomerCounter){
+        $HTMLString .= <<"END";
+        <input name="CustomerTicketCounterFromCustomer" id="CustomerTicketCounterFromCustomer" type="hidden" value="$CustomerCounter"/>
+END
+    }
+
+    $HTMLString .= "</div>";
+
+    my $ValueCounter = 0;
+    
 
     my $ValidValue = "";
     if($ValueCounter){
        $ValidValue = '1';
     }
 
-    $HTMLString .= <<"END";
-        </div>
-        <input id="$ValidateFieldName" type="text" class="$FieldClass" value="$ValidValue" style="display:none;" />
-        <div class="Clear"></div>
-    </div>
-END
-
     $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
-Core.Config.Set('DynamicFieldITSMConfigItem.TranslateRemoveSelection', '$TranslateRemoveSelection');
-DynamicFieldITSMConfigItem.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString");
+Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
+DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString");
 END
 
     my $JSValueCounter = 0;
@@ -557,7 +575,7 @@ END
         $JSValueCounter++;
 
         $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
-DynamicFieldITSMConfigItem.InitEditValue("$FieldName", "$JSValueCounter");
+DynamicFieldCustomerUser.InitEditValue("$FieldName", "$JSValueCounter");
 END
     }
 
@@ -608,7 +626,7 @@ END
 
         # add js to call FormUpdate()
         $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
-DynamicFieldITSMConfigItem.InitAJAXUpdate("$FieldName", [ $FieldsToUpdate ]);
+DynamicFieldCustomerUser.InitAJAXUpdate("$FieldName", [ $FieldsToUpdate ]);
 END
     }
 
@@ -840,7 +858,7 @@ END
             minLength: $FieldConfig->{MinQueryLength},
             source: function (Request, Response) {
                 var Data = {};
-                Data.Action         = 'DynamicFieldITSMConfigItemAJAXHandler';
+                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
                 Data.Subaction      = 'Search';
                 Data.ConfigOnly     = '1';
                 Data.FieldPrefix    = 'Search_';

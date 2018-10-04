@@ -1,5 +1,5 @@
 # --
-# Kernel/Modules/AdminDynamicFieldITSMConfigItem.pm - provides a dynamic fields config view for admins
+# Kernel/Modules/AdminDynamicFieldCustomerUser.pm - provides a dynamic fields config view for admins
 # Copyright (C) 2006-2016 c.a.p.e. IT GmbH, http://www.cape-it.de
 #
 # written/edited by:
@@ -304,8 +304,6 @@ sub _ChangeAction {
         );
     }
 
-    #TODO: Parei aqui
-
     # get dynamic field data
     my $DynamicFieldData = $Self->{DynamicFieldObject}->DynamicFieldGet(
         ID => $FieldID,
@@ -379,30 +377,10 @@ sub _ChangeAction {
     for my $ConfigParam (
         qw(
             ObjectType ObjectTypeName FieldType FieldTypeName ValidID
-            Constrictions DisplayPattern MaxArraySize AgentLink CustomerLink
-            MinQueryLength QueryDelay MaxQueryResult
+            CustomerUserInputType MinQueryLength QueryDelay MaxQueryResult
         )
     ) {
         $GetParam{$ConfigParam} = $Self->{ParamObject}->GetParam( Param => $ConfigParam );
-    }
-
-    # get 'raw' configuration params
-    for my $ConfigParam (
-        qw(
-            ItemSeparator
-        )
-    ) {
-        $GetParam{$ConfigParam} = $Self->{ParamObject}->GetParam( Param => $ConfigParam, Raw => 1, );
-    }
-
-    # get 'array' configuration params
-    for my $ConfigParam (
-        qw(
-            ITSMConfigItemClasses DeploymentStates DefaultValues
-        )
-    ) {
-        my @Data = $Self->{ParamObject}->GetArray( Param => $ConfigParam );
-        $GetParam{$ConfigParam} = \@Data;
     }
 
     # uncorrectable errors
@@ -425,15 +403,7 @@ sub _ChangeAction {
 
     # set specific config
     my $FieldConfig = {
-        ITSMConfigItemClasses => $GetParam{ITSMConfigItemClasses} || [],
-        DeploymentStates      => $GetParam{DeploymentStates}      || [],
-        Constrictions         => $GetParam{Constrictions}         || '',
-        DisplayPattern        => $GetParam{DisplayPattern}        || '<CI_Name>',
-        MaxArraySize          => $GetParam{MaxArraySize}          || '1',
-        ItemSeparator         => $GetParam{ItemSeparator}         || ', ',
-        DefaultValues         => $GetParam{DefaultValues}         || [],
-        AgentLink             => $GetParam{AgentLink}             || '',
-        CustomerLink          => $GetParam{CustomerLink}          || '',
+        CustomerUserInputType => $GetParam{CustomerUserInputType} || "Single contact",
         MinQueryLength        => $GetParam{MinQueryLength}        || 3,
         QueryDelay            => $GetParam{QueryDelay}            || 300,
         MaxQueryResult        => $GetParam{MaxQueryResult}        || 10,
@@ -473,15 +443,7 @@ sub _ShowScreen {
         $Param{DisplayFieldName} = $Param{Name};
     }
 
-    $Param{ITSMConfigItemClasses} = $Param{Config}->{ITSMConfigItemClasses} || [];
-    $Param{DeploymentStates}      = $Param{Config}->{DeploymentStates}      || [];
-    $Param{Constrictions}         = $Param{Config}->{Constrictions}         || '';
-    $Param{DisplayPattern}        = $Param{Config}->{DisplayPattern}        || '<CI_Name>';
-    $Param{MaxArraySize}          = $Param{Config}->{MaxArraySize}          || '1';
-    $Param{ItemSeparator}         = $Param{Config}->{ItemSeparator}         || ', ';
-    $Param{DefaultValues}         = $Param{Config}->{DefaultValues}         || [];
-    $Param{AgentLink}             = $Param{Config}->{AgentLink}             || '';
-    $Param{CustomerLink}          = $Param{Config}->{CustomerLink}          || '';
+    $Param{CustomerUserInputType} = $Param{Config}->{CustomerUserInputType} || "Single contact";
     $Param{MinQueryLength}        = $Param{Config}->{MinQueryLength}        || 3;
     $Param{QueryDelay}            = $Param{Config}->{QueryDelay}            || 300;
     $Param{MaxQueryResult}        = $Param{Config}->{MaxQueryResult}        || 10;
@@ -550,7 +512,7 @@ sub _ShowScreen {
 
     my %TypeInputs;
     $TypeInputs{ 'Single contact' } = 'Single contact';
-    $TypeInputs{ 'Multiple contacts' } = 'Single contacts';
+    $TypeInputs{ 'Multiple contacts' } = 'Multiple contacts';
     my %TypeInputsReverse = reverse %TypeInputs;
 
     my $InputTypesStrg = $Self->{LayoutObject}->BuildSelection(
@@ -563,35 +525,6 @@ sub _ShowScreen {
         Class        => 'Modernize',
     );
 
-    ## Field Configurations
-    # ITSMConfigItemClasses - ARRAY
-    my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-        Class => 'ITSM::ConfigItem::Class',
-    );
-    my $ITSMConfigItemClassesStrg = $Self->{LayoutObject}->BuildSelection(
-        Data         => \%{$ClassRef},
-        Name         => 'ITSMConfigItemClasses',
-        SelectedID   => $Param{ITSMConfigItemClasses},
-        PossibleNone => 0,
-        Translation  => 0,
-        Multiple     => 1,
-        Class        => 'W50pc',
-    );
-
-    # DeploymentStates - ARRAY
-    my $DeploymentRef = $Self->{GeneralCatalogObject}->ItemList(
-        Class => 'ITSM::ConfigItem::DeploymentState',
-    );
-    my $DeploymentStatesStrg = $Self->{LayoutObject}->BuildSelection(
-        Data         => \%{$DeploymentRef},
-        Name         => 'DeploymentStates',
-        SelectedID   => $Param{DeploymentStates},
-        PossibleNone => 0,
-        Translation  => 0,
-        Multiple     => 1,
-        Class        => 'W50pc',
-    );
-
     # Constrictions
     # nothing to do
 
@@ -600,48 +533,6 @@ sub _ShowScreen {
 
     # MaxArraySize
     # nothing to do
-
-    # ItemSeparator
-    my $ItemSeparatorStrg = $Self->{LayoutObject}->BuildSelection(
-        Data => {
-            ', ' => 'Comma (,)',
-            '; ' => 'Semicolon (;)',
-            ' '  => 'Whitespace ( )',
-        },
-        Name         => 'ItemSeparator',
-        SelectedID   => $Param{ItemSeparator},
-        PossibleNone => 0,
-        Translation  => 1,
-        Multiple     => 0,
-        Class        => 'Modernize W50pc',
-    );
-
-    # DefaultValues
-    my $DefaultValuesCount = 0;
-    for my $Key ( @{ $Param{DefaultValues} } ) {
-        next if (!$Key);
-        $DefaultValuesCount++;
-
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
-        );
-
-        my $Label = $Param{DisplayPattern} || '<CI_Name>';
-        while ($Label =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Label =~ s/<CI_$1>/$Replace/g;
-        }
-
-        $Self->{LayoutObject}->Block(
-            Name => 'DefaultValue',
-            Data => {
-                DefaultValue => $Key,
-                Label        => $Label,
-                ValueCounter => $DefaultValuesCount,
-            },
-        );
-    }
 
     # AgentLink
     # nothing to do
@@ -673,10 +564,6 @@ sub _ShowScreen {
             %Param,
             ValidityStrg              => $ValidityStrg,
             DynamicFieldOrderStrg     => $DynamicFieldOrderStrg,
-            ITSMConfigItemClassesStrg => $ITSMConfigItemClassesStrg,
-            DeploymentStatesStrg      => $DeploymentStatesStrg,
-            ItemSeparatorStrg         => $ItemSeparatorStrg,
-            DefaultValuesCount        => $DefaultValuesCount,
             InputTypesStrg            => $InputTypesStrg,
         }
     );

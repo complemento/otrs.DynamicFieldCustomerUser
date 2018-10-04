@@ -1,5 +1,5 @@
 # --
-# Kernel/Language/de_DynamicFieldITSMConfigItem.pm - provides german language translation for DynamicFieldITSMConfigItem package
+# Kernel/Language/de_DynamicFieldCustomerUser.pm - provides german language translation for DynamicFieldITSMConfigItem package
 # Copyright (C) 2006-2014 c.a.p.e. IT GmbH, http://www.cape-it.de
 #
 # written/changed by:

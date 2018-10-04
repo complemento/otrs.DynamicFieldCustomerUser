@@ -1,5 +1,5 @@
 # --
-# Kernel/Modules/DynamicFieldITSMConfigItemAJAXHandler.pm - a module used to handle ajax requests
+# Kernel/Modules/DynamicFieldICustomerUserAJAXHandler.pm - a module used to handle ajax requests
 # Copyright (C) 2006-2016 c.a.p.e. IT GmbH, http://www.cape-it.de
 #
 # written/edited by:
@@ -72,7 +72,7 @@ sub Run {
         if ( $DynamicFieldConfig->{FieldType} ne 'ITSMConfigItemReference' ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message => "DynamicFieldITSMConfigItemAJAXHandler: DynamicField doesn't refer to type ITSMConfigItem.",
+                Message => "DynamicFieldCusromerUserAJAXHandler: DynamicField doesn't refer to type ITSMConfigItem.",
             );
             return;
         }

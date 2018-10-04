@@ -54,240 +54,10 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         Identifiers[Identifier]['MinQueryLength']      = MinQueryLength;
         Identifiers[Identifier]['QueryDelay']          = QueryDelay;
         Identifiers[Identifier]['Constriction']        = new Object();
-
-        var ConstrictionArray = Constriction.split(";");
-        for (var i = 0; i < ConstrictionArray.length; i++) {
-            Identifiers[Identifier]['Constriction'][ConstrictionArray[i]] = 1;
-        }
-
-        if ($('.InputField_Selection > input[name=' + Identifier + ']').length >= Identifiers[Identifier]['MaxArraySize']) {
-            $(Identifiers[Identifier]['AutoCompleteFieldID']).hide();
-        }
-
-        $(Identifiers[Identifier]['AutoCompleteFieldID']).autocomplete({
-            delay: Identifiers[Identifier]['QueryDelay'],
-            minLength: Identifiers[Identifier]['MinQueryLength'],
-            source: function (Request, Response) {
-                var Data = {};
-                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
-                Data.Subaction      = 'Search';
-                Data.Search         = Request.term;
-                Data.DynamicFieldID = IdentifierID;
-
-                var QueryString = Core.AJAX.SerializeForm($(Identifiers[Identifier]['AutoCompleteFieldID']), Data);
-                $.each(Data, function (Key, Value) {
-                    QueryString += ';' + encodeURIComponent(Key) + '=' + encodeURIComponent(Value);
-                });
-
-                if ($(Identifiers[Identifier]['AutoCompleteFieldID']).data('AutoCompleteXHR')) {
-                    $(Identifiers[Identifier]['AutoCompleteFieldID']).data('AutoCompleteXHR').abort();
-                    $(Identifiers[Identifier]['AutoCompleteFieldID']).removeData('AutoCompleteXHR');
-                }
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).data('AutoCompleteXHR', Core.AJAX.FunctionCall(Core.Config.Get('CGIHandle'), QueryString, function (Result) {
-                    var Data = [];
-                    $.each(Result, function () {
-                        Data.push({
-                            key:   this.Key,
-                            value: this.Value,
-                            title: this.Title
-                        });
-                    });
-                    $(Identifiers[Identifier]['AutoCompleteFieldID']).data('AutoCompleteData', Data);
-                    $(Identifiers[Identifier]['AutoCompleteFieldID']).removeData('AutoCompleteXHR');
-                    Response(Data);
-                }).fail(function() {
-                    Response($(Identifiers[Identifier]['AutoCompleteFieldID']).data('AutoCompleteData'));
-                }));
-            },
-            select: function (Event, UI) {
-                Identifiers[Identifier]['IDCounter']++;
-                $(Identifiers[Identifier]['ContainerFieldID']).append(
-                    '<div class="InputField_Selection" style="display:block;position:inherit;top:0px;">'
-                    + '<input id="'
-                    + Identifiers[Identifier]['ValueField']
-                    + Identifiers[Identifier]['IDCounter']
-                    + '" type="hidden" name="'
-                    + Identifier
-                    + '" value="'
-                    + UI.item.key
-                    + '" />'
-                    + '<div class="Text" title="'
-                    + UI.item.title
-                    + '">'
-                    + UI.item.value
-                    + '</div>'
-                    + '<div class="Remove"><a href="#" role="button" title="'
-                    + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
-                    + '" tabindex="-1" aria-label="'
-                    + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
-                    + ': '
-                    + UI.item.value
-                    + '">x</a></div><div class="Clear"></div>'
-                    + '</div>'
-                );
-                DynamicFieldCustomerUser.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
-                $(Identifiers[Identifier]['ContainerFieldID']).show();
-                $(Identifiers[Identifier]['ContainerFieldID'] + ' > .InputField_Dummy').remove();
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).val('');
-                if ($('.InputField_Selection > input[name=' + Identifier + ']').length >= Identifiers[Identifier]['MaxArraySize']) {
-                    $(Identifiers[Identifier]['AutoCompleteFieldID']).hide();
-                }
-                $(Identifiers[Identifier]['FieldID']).trigger('change');
-                Event.preventDefault();
-                return false;
-            },
+        $("#"+Identifiers[Identifier]['AutoCompleteField']+", ."+Identifiers[Identifier]['AutoCompleteField']).each(function () {
+            TargetNS.InitSearchDynamicFieldCustomerUser($(this));
         });
-
-        $(Identifiers[Identifier]['AutoCompleteFieldID']).blur(function() {
-            $(this).val('');
-            if ( $(Identifiers[Identifier]['ValidateFieldID']).hasClass('Error') ) {
-                $('label[for=' + Identifier + ']').addClass('LabelError');
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).addClass('Error');
-            } else {
-                $('label[for=' + Identifier + ']').removeClass('LabelError');
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).removeClass('Error');
-            }
-        });
-
-        $(Identifiers[Identifier]['FieldID']).change(function() {
-            if ($(Identifiers[Identifier]['FieldID']).data('AJAXRequest')) {
-                $(Identifiers[Identifier]['FieldID']).data('AJAXRequest').abort();
-                $(Identifiers[Identifier]['FieldID']).removeData('AJAXRequest');
-            }
-
-            $(Identifiers[Identifier]['ValidateFieldID']).val('');
-            $('.InputField_Selection > input[name=' + Identifier + ']').each(function () {
-                if($(this).val()){
-                    $(Identifiers[Identifier]['ValidateFieldID']).removeClass('Error');
-                    $(Identifiers[Identifier]['ValidateFieldID']).val('1');
-                    return false;
-                }
-            });
-
-            if ($(Identifiers[Identifier]['FieldID']).val().length == 0) {
-                return false;
-            }
-
-            var Data = {};
-            Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
-            Data.Subaction      = 'AddValue';
-            Data.Key            = $(Identifiers[Identifier]['FieldID']).val();
-            Data.DynamicFieldID = IdentifierID;
-
-            // add data from session
-            $.extend(Data, GetSessionInformation());
-
-            var QueryString = Core.AJAX.SerializeForm($(Identifiers[Identifier]['AutoCompleteFieldID']), Data);
-            $.each(Data, function (Key, Value) {
-                QueryString += ';' + encodeURIComponent(Key) + '=' + encodeURIComponent(Value);
-            });
-
-            $(Identifiers[Identifier]['FieldID']).data('AJAXRequest', $.ajax({
-                type    : 'POST',
-                url     : Core.Config.Get('CGIHandle'),
-                data    : QueryString,
-                dataType: 'html',
-                async   : false,
-                success : function (Response) {
-                    if (Response) {
-                        var Result = jQuery.parseJSON(Response);
-                        $(Identifiers[Identifier]['FieldID']).val('');
-                        while ($('.InputField_Selection > input[name=' + Identifier + ']').length >= Identifiers[Identifier]['MaxArraySize']) {
-                            $('.InputField_Selection > input[name=' + Identifier + ']').last().siblings('div.Remove').find('a').trigger('click');
-                        }
-                        Identifiers[Identifier]['IDCounter']++;
-                        $(Identifiers[Identifier]['ContainerFieldID']).append(
-                            '<div class="InputField_Selection" style="display:block;position:inherit;top:0px;">'
-                            + '<input id="'
-                            + Identifiers[Identifier]['ValueField']
-                            + Identifiers[Identifier]['IDCounter']
-                            + '" type="hidden" name="'
-                            + Identifier
-                            + '" value="'
-                            + Result.Key
-                            + '" />'
-                            + '<div class="Text" title="'
-                            + Result.Title
-                            + '">'
-                            + Result.Value
-                            + '</div>'
-                            + '<div class="Remove"><a href="#" role="button" title="'
-                            + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
-                            + '" tabindex="-1" aria-label="'
-                            + Core.Config.Get('DynamicFieldCustomerUser.TranslateRemoveSelection')
-                            + ': '
-                            + Result.Value
-                            + '">x</a></div><div class="Clear"></div>'
-                            + '</div>'
-                        );
-                        DynamicFieldCustomerUser.InitEditValue(Identifier, Identifiers[Identifier]['IDCounter']);
-                        $(Identifiers[Identifier]['ContainerFieldID']).show();
-                        $(Identifiers[Identifier]['ContainerFieldID'] + ' > .InputField_Dummy').remove();
-                        $(Identifiers[Identifier]['AutoCompleteFieldID']).val('');
-                        if ($('.InputField_Selection > input[name=' + Identifier + ']').length >= Identifiers[Identifier]['MaxArraySize']) {
-                            $(Identifiers[Identifier]['AutoCompleteFieldID']).hide();
-                        }
-                        $(Identifiers[Identifier]['FieldID']).trigger('change');
-                        return false;
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    if (textStatus != 'abort') {
-                        alert('Error thrown by AJAX: ' + textStatus + ': ' + errorThrown);
-                    }
-                }
-            }));
-        });
-
-        $(Identifiers[Identifier]['ValidateFieldID']).closest('form').bind('submit', function() {
-            if ( $(Identifiers[Identifier]['ValidateFieldID']).hasClass('Error') ) {
-                $('label[for=' + Identifier + ']').addClass('LabelError');
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).addClass('Error');
-            } else {
-                $('label[for=' + Identifier + ']').removeClass('LabelError');
-                $(Identifiers[Identifier]['AutoCompleteFieldID']).removeClass('Error');
-            }
-        });
-
-        CheckInputFields(Identifier);
-
-        Core.App.Subscribe('Event.AJAX.FormUpdate.Callback', function (Request, Response) {
-            if ($('.InputField_Selection > input[name=' + Identifier + ']').length > 0) {
-                var Data = {};
-                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
-                Data.Subaction      = 'PossibleValueCheck';
-                Data.DynamicFieldID = IdentifierID;
-
-                var QueryString = SerializeForm($(Identifiers[Identifier]['AutoCompleteFieldID']), Identifiers[Identifier]['Constriction']);
-                $.each(Data, function (Key, Value) {
-                    QueryString += ';' + encodeURIComponent(Key) + '=' + encodeURIComponent(Value);
-                });
-
-                if ($(Identifiers[Identifier]['FieldID']).data('PossibleValueCheck') != QueryString) {
-                    $(Identifiers[Identifier]['FieldID']).data('PossibleValueCheck', QueryString);
-                    Core.AJAX.FunctionCall(Core.Config.Get('CGIHandle'), QueryString, function (Response) {
-                        var Change = 0;
-                        $('.InputField_Selection > input[name=' + Identifier + ']').each(function() {
-                            var Found = 0;
-                            var $Element = $(this);
-                            $.each(Response, function(Key, Value) {
-                                if ( $Element.val() == Value ) {
-                                    Found = 1;
-                                }
-                            });
-                            if (Found == 0) {
-                                $Element.closest('.InputField_Selection').remove();
-                                Change = 1;
-                            }
-                        });
-                        if (Change) {
-                            CheckInputFields(Identifier);
-                            $(Identifiers[Identifier]['FieldID']).trigger('change');
-                        }
-                    }, undefined, false);
-                }
-            }
-        });
+        
     };
 
     /**
@@ -417,6 +187,552 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         Data.ChallengeToken = Core.Config.Get('ChallengeToken');
         return Data;
     }
+
+    /*Novo código*/
+
+    /**
+     * @private
+     * @name BackupDataDFCustomerUser
+     * @memberof DynamicFieldCustomerUser
+     * @member {Object}
+     * @description
+     *      Saves Customer data for later restore.
+     */
+    var BackupData = {
+        CustomerInfo: '',
+        CustomerEmail: '',
+        CustomerKey: ''
+    },
+    /**
+     * @private
+     * @name CustomerFieldChangeRunCountDFCustomerUser
+     * @memberof DynamicFieldCustomerUser
+     * @member {Object}
+     * @description
+     *      Needed for the change event of customer fields, if ActiveAutoComplete is false (disabled).
+     */
+        CustomerFieldChangeRunCount = {};
+
+    /**
+     * @private
+     * @name InitSearchDynamicFieldCustomerUser
+     * @memberof DynamicFieldCustomerUser
+     * @function
+     * @param {jQueryObject} $Element - The jQuery object of the input field with autocomplete.
+     * @description
+     *      Initializes the module.
+     */
+    TargetNS.InitSearchDynamicFieldCustomerUser = function ($Element) {
+        // get customer tickets for AgentTicketCustomer
+        if (Core.Config.Get('Action') === 'AgentTicketCustomer') {
+            GetCustomerTickets($('#CustomerAutoComplete').val(), $('#CustomerID').val());
+
+            $Element.blur(function () {
+                if ($Element.val() === '') {
+                    TargetNS.ResetCustomerInfo();
+                    DeactivateSelectionCustomerID();
+                    $('#CustomerTickets').empty();
+                }
+            });
+        }
+
+        // get customer tickets for AgentTicketPhone and AgentTicketEmail
+        if ((Core.Config.Get('Action') === 'AgentTicketEmail' || Core.Config.Get('Action') === 'AgentTicketPhone') && $('#SelectedCustomerUser').val() !== '') {
+            GetCustomerTickets($('#SelectedCustomerUser').val());
+        }
+
+        // just save the initial state of the customer info
+        if ($('#CustomerInfo').length) {
+            BackupData.CustomerInfo = $('#CustomerInfo .Content').html();
+        }
+
+        if (isJQueryObject($Element)) {
+            // Hide tooltip in autocomplete field, if user already typed something to prevent the autocomplete list
+            // to be hidden under the tooltip. (Only needed for serverside errors)
+            $Element.off('keyup.Validate').on('keyup.Validate', function () {
+               var Value = $Element.val();
+               if ($Element.hasClass('ServerError') && Value.length) {
+                   $('#OTRS_UI_Tooltips_ErrorTooltip').hide();
+               }
+            });
+
+            Core.App.Subscribe('Event.CustomerUserAddressBook.AddTicketCustomer.Callback.' + $Element.attr('id'), function(UserLogin, CustomerTicketText) {
+                $Element.val(CustomerTicketText);
+                TargetNS.AddTicketCustomer($Element.attr('id'), CustomerTicketText, UserLogin);
+            });
+
+            Core.UI.Autocomplete.Init($Element, function (Request, Response) {
+                var URL = Core.Config.Get('Baselink'),
+                    Data = {
+                        Action: 'AgentCustomerSearch',
+                        Term: Request.term,
+                        MaxResults: Core.UI.Autocomplete.GetConfig('MaxResultsDisplayed')
+                    };
+
+                $Element.data('AutoCompleteXHR', Core.AJAX.FunctionCall(URL, Data, function (Result) {
+                    var ValueData = [];
+                    $Element.removeData('AutoCompleteXHR');
+                    $.each(Result, function () {
+                        ValueData.push({
+                            label: this.Label + " (" + this.Value + ")",
+                            // customer list representation (see CustomerUserListFields from Defaults.pm)
+                            value: this.Label,
+                            // customer user id
+                            key: this.Value
+                        });
+                    });
+                    Response(ValueData);
+                }));
+            }, function (Event, UI) {
+                var CustomerKey = UI.item.key,
+                    CustomerValue = UI.item.value;
+
+                BackupData.CustomerKey = CustomerKey;
+                BackupData.CustomerEmail = CustomerValue;
+
+                $Element.val(CustomerValue);
+
+                if (
+                    Core.Config.Get('Action') === 'AgentTicketEmail'
+                    || Core.Config.Get('Action') === 'AgentTicketCompose'
+                    || Core.Config.Get('Action') === 'AgentTicketForward'
+                    || Core.Config.Get('Action') === 'AgentTicketEmailOutbound'
+                    || Core.Config.Get('Action') === 'AgentTicketEmailResend'
+                    )
+                {
+                    $Element.val('');
+                }
+
+                if (
+                    Core.Config.Get('Action') !== 'AgentTicketPhone'
+                    && Core.Config.Get('Action') !== 'AgentTicketEmail'
+                    && Core.Config.Get('Action') !== 'AgentTicketCompose'
+                    && Core.Config.Get('Action') !== 'AgentTicketForward'
+                    && Core.Config.Get('Action') !== 'AgentTicketEmailOutbound'
+                    && Core.Config.Get('Action') !== 'AgentTicketEmailResend'
+                    )
+                {
+                    // set hidden field SelectedCustomerUser
+                    $('#SelectedCustomerUser').val(CustomerKey);
+
+                    ActivateSelectionCustomerID();
+
+                    // needed for AgentTicketCustomer.pm
+                    if ($('#CustomerUserID').length) {
+                        $('#CustomerUserID').val(CustomerKey);
+                        if ($('#CustomerUserOption').length) {
+                            $('#CustomerUserOption').val(CustomerKey);
+                        }
+                        else {
+                            $('<input type="hidden" name="CustomerUserOption" id="CustomerUserOption">').val(CustomerKey).appendTo($Element.closest('form'));
+                        }
+                    }
+
+                    // get customer tickets
+                    GetCustomerTickets(CustomerKey);
+
+                    // get customer data for customer info table
+                    GetCustomerInfo(CustomerKey);
+                }
+                else {
+                    TargetNS.AddTicketCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey);
+                }
+            }, 'CustomerSearch');
+
+            if (
+                Core.Config.Get('Action') !== 'AgentTicketCustomer'
+                && Core.Config.Get('Action') !== 'AgentTicketPhone'
+                && Core.Config.Get('Action') !== 'AgentTicketEmail'
+                && Core.Config.Get('Action') !== 'AgentTicketCompose'
+                && Core.Config.Get('Action') !== 'AgentTicketForward'
+                && Core.Config.Get('Action') !== 'AgentTicketEmailOutbound'
+                && Core.Config.Get('Action') !== 'AgentTicketEmailResend'
+                )
+            {
+                $Element.blur(function () {
+                    var FieldValue = $(this).val();
+                    if (FieldValue !== BackupData.CustomerEmail && FieldValue !== BackupData.CustomerKey) {
+                        $('#SelectedCustomerUser').val('');
+                        $('#CustomerUserID').val('');
+                        $('#CustomerID').val('');
+                        $('#CustomerUserOption').val('');
+                        $('#ShowCustomerID').html('');
+
+                        // reset customer info table
+                        $('#CustomerInfo .Content').html(BackupData.CustomerInfo);
+
+                        if (Core.Config.Get('Action') === 'AgentTicketProcess' && typeof Core.Config.Get('CustomerFieldsToUpdate') !== 'undefined') {
+                            // update services (trigger ServiceID change event)
+                            Core.AJAX.FormUpdate($('#CustomerID').closest('form'), 'AJAXUpdate', 'ServiceID', Core.Config.Get('CustomerFieldsToUpdate'));
+                        }
+                    }
+                });
+            }
+            else {
+                // initializes the customer fields
+                TargetNS.InitCustomerField();
+            }
+        }
+
+        // On unload remove old selected data. If the page is reloaded (with F5) this data
+        // stays in the field and invokes an ajax request otherwise. We need to use beforeunload
+        // here instead of unload because the URL of the window does not change on reload which
+        // doesn't trigger pagehide.
+        $(window).on('beforeunload.CustomerSearch', function () {
+            $('#SelectedCustomerUser').val('');
+            return; // return nothing to suppress the confirmation message
+        });
+
+        CheckPhoneCustomerCountLimit();
+    };
+
+    /**
+     * @name InitCustomerField
+     * @memberof Core.Agent.CustomerSearch
+     * @function
+     * @description
+     *      This function initializes the customer fields.
+     */
+    TargetNS.InitCustomerField = function () {
+
+        // loop over the field with CustomerAutoComplete class
+        $('.CustomerAutoComplete').each(function() {
+            var ObjectId = $(this).attr('id');
+
+            $('#' + ObjectId).on('change', function () {
+
+                if (!$('#' + ObjectId).val() || $('#' + ObjectId).val() === '') {
+                    return false;
+                }
+
+                // if autocompletion is disabled and only avaible via the click
+                // of a button next to the input field, we cannot handle this
+                // change event the normal way.
+                if (!Core.UI.Autocomplete.GetConfig('ActiveAutoComplete')) {
+                    // we wait some time after this event to check, if the search button
+                    // for this field was pressed. If so, no action is needed
+                    // If the change event was fired without clicking the search button,
+                    // probably the user clicked out of the field.
+                    // This should also add the customer (the enetered value) to the list
+
+                    if (typeof CustomerFieldChangeRunCount[ObjectId] === 'undefined') {
+                        CustomerFieldChangeRunCount[ObjectId] = 1;
+                    }
+                    else {
+                        CustomerFieldChangeRunCount[ObjectId]++;
+                    }
+
+                    if (Core.UI.Autocomplete.SearchButtonClicked[ObjectId]) {
+                        delete CustomerFieldChangeRunCount[ObjectId];
+                        delete Core.UI.Autocomplete.SearchButtonClicked[ObjectId];
+                        return false;
+                    }
+                    else {
+                        if (CustomerFieldChangeRunCount[ObjectId] === 1) {
+                            window.setTimeout(function () {
+                                $('#' + ObjectId).trigger('change');
+                            }, 200);
+                            return false;
+                        }
+                        delete CustomerFieldChangeRunCount[ObjectId];
+                    }
+                }
+
+
+                // If the autocomplete popup window is visible, delay this change event.
+                // It might be caused by clicking with the mouse into the autocomplete list.
+                // Wait until it is closed to be sure that we don't add a customer twice.
+
+                if ($(this).autocomplete("widget").is(':visible')) {
+                    window.setTimeout(function(){
+                        $('#' + ObjectId).trigger('change');
+                    }, 200);
+                    return false;
+                }
+
+                TargetNS.AddTicketCustomer(ObjectId, $('#' + ObjectId).val());
+                return false;
+            });
+
+            $('#' + ObjectId).on('keypress', function (e) {
+                if (e.which === 13){
+                    TargetNS.AddTicketCustomer(ObjectId, $('#' + ObjectId).val());
+                    return false;
+                }
+            });
+        });
+    };
+
+    /**
+     * @private
+     * @name CheckPhoneCustomerCountLimit
+     * @memberof Core.Agent.CustomerSearch
+     * @function
+     * @description
+     *      In AgentTicketPhone, this checks if more than one entry is allowed
+     *      in the customer list and blocks/unblocks the autocomplete field as needed.
+     */
+    function CheckPhoneCustomerCountLimit() {
+
+        // Only operate in AgentTicketPhone
+        if (Core.Config.Get('Action') !== 'AgentTicketPhone') {
+            return;
+        }
+
+        // Check if multiple from entries are allowed
+        if (parseInt(Core.Config.Get('CustomerSearch').AllowMultipleFrom, 10)) {
+            return;
+        }
+
+        if ($('#TicketCustomerContentFromCustomer input.CustomerTicketText').length > 0) {
+            $('#FromCustomer').val('').prop('disabled', true).prop('readonly', true);
+            $('#Dest').trigger('focus');
+        }
+        else {
+            $('#FromCustomer').val('').prop('disabled', false).prop('readonly', false);
+        }
+    }
+
+    function htmlDecode(Text){
+        return Text.replace(/&amp;/g, '&');
+    }
+
+    /**
+     * @name AddTicketCustomer
+     * @memberof Core.Agent.CustomerSearch
+     * @function
+     * @returns {Boolean} Returns false.
+     * @param {String} Field
+     * @param {String} CustomerValue - The readable customer identifier.
+     * @param {String} CustomerKey - Customer key on system.
+     * @param {String} SetAsTicketCustomer -  Set this customer as main ticket customer.
+     * @description
+     *      This function adds a new ticket customer
+     */
+    TargetNS.AddTicketCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer) {
+
+        var $Clone = $('.CustomerTicketTemplate' + Field).clone(),
+            CustomerTicketCounter = $('#CustomerTicketCounter' + Field).val(),
+            TicketCustomerIDs = 0,
+            IsDuplicated = false,
+            IsFocused = ($(document.activeElement).attr('id') == Field),
+            Suffix;
+
+        if (typeof CustomerKey !== 'undefined') {
+            CustomerKey = htmlDecode(CustomerKey);
+        }
+
+        if (CustomerValue === '') {
+            return false;
+        }
+
+        // check for duplicated entries
+        $('[class*=CustomerTicketText'+Field+']').each(function() {
+            if ($(this).val() === CustomerValue) {
+                IsDuplicated = true;
+            }
+        });
+        if (IsDuplicated) {
+            TargetNS.ShowDuplicatedDialog(Field);
+            return false;
+        }
+
+        // get number of how much customer ticket are present
+        TicketCustomerIDs = $('.CustomerContainer'+Field+' input[type="radio"]').length;
+
+        // increment customer counter
+        CustomerTicketCounter++;
+
+        // set sufix
+        Suffix = '_' + CustomerTicketCounter;
+
+        // remove unnecessary classes
+        $Clone.removeClass('Hidden CustomerTicketTemplate' + Field);
+
+        // copy values and change ids and names
+        $Clone.find(':input, a').each(function(){
+            var ID = $(this).attr('id');
+            $(this).attr('id', ID + Suffix);
+            $(this).val(CustomerValue);
+            if (ID !== 'CustomerSelected'+ Field) {
+                $(this).attr('name', ID + Suffix);
+            }
+
+            // add event handler to radio button
+            if($(this).hasClass('CustomerTicketRadio'+ Field)) {
+
+                if (TicketCustomerIDs === 0) {
+                    $(this).prop('checked', true);
+                }
+
+                // set counter as value
+                $(this).val(CustomerTicketCounter);
+
+                // bind change function to radio button to select customer
+                $(this).on('change', function () {
+                    // remove row
+                    if ($(this).prop('checked')){
+                        //TargetNS.ReloadCustomerInfo(CustomerKey);
+                    }
+                    return false;
+                });
+            }
+
+            // set customer key if present
+            if($(this).hasClass('CustomerKey'+ Field)) {
+                $(this).val(CustomerKey);
+            }
+
+            // add event handler to remove button
+            if($(this).hasClass('RemoveButton'+ Field)) {
+
+                // bind click function to remove button
+                $(this).on('click', function () {
+                    // remove row
+                    TargetNS.RemoveCustomerTicket($(this),Field);
+
+                    // clear CustomerHistory table if there are no selected customer users
+                    if ($('#TicketCustomerContent' + Field + ' .CustomerTicketRadio'+ Field).length === 0) {
+                        $('#CustomerTickets'+ Field).empty();
+                    }
+                    return false;
+                });
+                // set button value
+                $(this).val(CustomerValue);
+            }
+
+        });
+        // show container
+        $('#TicketCustomerContent' + Field).parent().removeClass('Hidden');
+        // append to container
+        $('#TicketCustomerContent' + Field).append($Clone);
+
+        // set new value for CustomerTicketCounter
+        $('#CustomerTicketCounter' + Field).val(CustomerTicketCounter);
+        if ((CustomerKey !== '' && TicketCustomerIDs === 0 && (Field === 'ToCustomer' || Field === 'FromCustomer')) || SetAsTicketCustomer) {
+            if (SetAsTicketCustomer) {
+                $('#CustomerSelected'+Field+'_' + CustomerTicketCounter).prop('checked', true).trigger('change');
+            }
+            else {
+                $('.CustomerContainer'+Field+' input[type="radio"]:first').prop('checked', true).trigger('change');
+            }
+        }
+
+        // Return the value to the search field.
+        $('#' + Field).val('');
+
+        // Re-focus the field, but only if it was previously focused.
+        if (IsFocused) {
+            $('#' + Field).focus();
+        }
+
+        //CheckPhoneCustomerCountLimit();
+
+        // Reload Crypt options on specific screens.
+        if (
+            (
+                Core.Config.Get('Action') === 'AgentTicketEmail'
+                || Core.Config.Get('Action') === 'AgentTicketCompose'
+                || Core.Config.Get('Action') === 'AgentTicketForward'
+                || Core.Config.Get('Action') === 'AgentTicketEmailOutbound'
+                || Core.Config.Get('Action') === 'AgentTicketEmailResend'
+            )
+            && $('#CryptKeyID').length
+            )
+        {
+            Core.AJAX.FormUpdate($('#' + Field).closest('form'), 'AJAXUpdate', '', ['CryptKeyID']);
+        }
+
+        // now that we know that at least one customer has been added,
+        // we can remove eventual errors from the customer field
+        $('#FromCustomer, #ToCustomer')
+            .removeClass('Error ServerError')
+            .closest('.Field')
+            .prev('label')
+            .removeClass('LabelError');
+        Core.Form.ErrorTooltips.HideTooltip();
+
+        return false;
+    }; 
+
+    /**
+     * @name RemoveCustomerTicket
+     * @memberof Core.Agent.CustomerSearch
+     * @function
+     * @param {jQueryObject} Object - JQuery object used as base to delete it's parent.
+     * @description
+     *      This function removes a customer ticket entry.
+     */
+    TargetNS.RemoveCustomerTicket = function (Object, Field) {
+        var TicketCustomerIDs = 0,
+        $Field = Object.closest('.Field'),
+        $Form;
+
+        if (
+            Core.Config.Get('Action') === 'AgentTicketEmail'
+            || Core.Config.Get('Action') === 'AgentTicketCompose'
+            || Core.Config.Get('Action') === 'AgentTicketForward'
+            || Core.Config.Get('Action') === 'AgentTicketEmailOutbound'
+            || Core.Config.Get('Action') === 'AgentTicketEmailResend'
+            )
+        {
+            $Form = Object.closest('form');
+        }
+        Object.parent().remove();
+        TicketCustomerIDs = $('.CustomerContainer'+Field+' input[type="radio"]').length;
+        if (TicketCustomerIDs === 0) {
+            //TargetNS.ResetCustomerInfo();
+        }
+
+        // Reload Crypt options on specific screens.
+        if (
+            (
+                Core.Config.Get('Action') === 'AgentTicketEmail'
+                || Core.Config.Get('Action') === 'AgentTicketCompose'
+                || Core.Config.Get('Action') === 'AgentTicketForward'
+                || Core.Config.Get('Action') === 'AgentTicketEmailOutbound'
+                || Core.Config.Get('Action') === 'AgentTicketEmailResend'
+            )
+            && $('#CryptKeyID').length
+            )
+        {
+            Core.AJAX.FormUpdate($Form, 'AJAXUpdate', '', ['CryptKeyID']);
+        }
+
+        if(!$('.CustomerContainer'+Field+' input[type="radio"]').is(':checked')){
+            //set the first one as checked
+            $('.CustomerContainer'+Field+' input[type="radio"]:first').prop('checked', true).trigger('change');
+        }
+
+        if ($Field.find('.CustomerTicketText'+Field+':visible').length === 0) {
+            $Field.addClass('Hidden');
+
+            //DeactivateSelectionCustomerID();
+        }
+
+        //CheckPhoneCustomerCountLimit();
+    };
+
+    /**
+     * @name ShowDuplicatedDialog
+     * @memberof Core.Agent.CustomerSearch
+     * @function
+     * @param {String} Field - ID object of the element should receive the focus on close event.
+     * @description
+     *      This function shows an alert dialog for duplicated entries.
+     */
+    TargetNS.ShowDuplicatedDialog = function(Field){
+        Core.UI.Dialog.ShowAlert(
+            Core.Language.Translate('Duplicated entry'),
+            Core.Language.Translate('This address already exists on the address list.') + ' ' + Core.Language.Translate('It is going to be deleted from the field, please try again.'),
+            function () {
+                Core.UI.Dialog.CloseDialog($('.Alert'));
+                $('#' + Field).val('');
+                $('#' + Field).focus();
+                return false;
+            }
+        );
+    };
 
     return TargetNS;
 }(DynamicFieldCustomerUser || {}));

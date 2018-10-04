@@ -505,22 +505,73 @@ sub EditFieldRender {
     my $CustomerHiddenContainer = "Hidden";
 
     my $HTMLString = <<"END";
+    <style>
+        .CustomerContainer$AutoCompleteFieldName,.CcCustomerContainer$AutoCompleteFieldName,.BccCustomerContainer$AutoCompleteFieldName
+        {
+            background-color:#F2F2F2;
+            border:1px solid #CCCCCC;
+            -moz-box-shadow:inset 1px 1px 5px #ccc;
+            -webkit-box-shadow:inset 1px 1px 5px #ccc;
+            box-shadow:inset 1px 1px 5px #ccc;
+            padding:5px 7px 10px 6px;width:74%;
+            position:relative;-moz-border-radius:2px;
+            -webkit-border-radius:2px;border-radius:2px;
+        }
+        .CustomerContainer$AutoCompleteFieldName > div,.CcCustomerContainer$AutoCompleteFieldName > div,.BccCustomerContainer$AutoCompleteFieldName > div
+        {
+            margin-top:5px;
+        }
+        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName,.CcCustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName,.BccCustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName
+        {
+            width:89%;
+            margin-left:7px;
+        }
+        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName
+        {
+            transition:background-color 1s ease,border 1s ease;
+        }
+        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName.MainCustomer
+        {
+            background-color:#F7ECC3;
+            border:1px solid #E8CC8B;
+        }
+        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName.Radio
+        {
+            width:84%;
+            margin-left:0px;
+        }
+        .CustomerContainer$AutoCompleteFieldName .BoxLabel,.CcCustomerContainer$AutoCompleteFieldName .BoxLabel,.BccCustomerContainer$AutoCompleteFieldName .BoxLabel
+        {
+            background-color:#CCCCCC;
+            font-size:11px;
+            right:100%;
+            top:10px;
+            padding:0 5px;
+            position:absolute;
+            text-align:center;
+            text-shadow:1px 1px 1px #FFFFFF;
+            min-width:20px;
+            color:#555;
+        }
+    </style>
     <div class="Field">
-        <input id="$FieldName" type="text" name="$FieldName" value="" class="CustomerAutoComplete W75pc $FromInvalid" autocomplete="off" />
-        <div id="FromCustomerServerError" class="TooltipErrorMessage">
+        <input id="$ValueFieldName" type="hidden" name="$ValueFieldName" value="$Value" />
+        <input id="$AutoCompleteFieldName" type="text" name="$AutoCompleteFieldName" value="" class="$AutoCompleteFieldName W75pc $FromInvalid" autocomplete="off" />
+        <div id="$AutoCompleteFieldName\ServerError" class="TooltipErrorMessage">
         </div>
     </div>
+    <div class="clear"></div>
     <div class="Field $CustomerHiddenContainer">
-        <div class="CustomerTicketTemplateFromCustomer SpacingTopSmall Hidden">
-            <input name="CustomerSelected" title="Select this customer as the main customer. id="CustomerSelected" class="CustomerTicketRadio" type="radio" value=""/>
-            <input name="CustomerKey" id="CustomerKey" class="CustomerKey" type="hidden" value=""/>
-            <input class="CustomerTicketText Radio" title="Customer user name="CustomerTicketText" id="CustomerTicketText" type="text" value="" readonly="readonly" />
-            <a href="#" id="RemoveCustomerTicket" class="RemoveButton CustomerTicketRemove">
+        <div class="CustomerTicketTemplate$AutoCompleteFieldName SpacingTopSmall Hidden">
+            <input name="CustomerSelected$AutoCompleteFieldName" title="Select this customer as the main customer." id="CustomerSelected$AutoCompleteFieldName" class="CustomerTicketRadio$AutoCompleteFieldName" type="radio" value=""/>
+            <input name="CustomerKey$AutoCompleteFieldName" id="CustomerKey$AutoCompleteFieldName" class="CustomerKey$AutoCompleteFieldName" type="hidden" value=""/>
+            <input class="CustomerTicketText$AutoCompleteFieldName Radio" title="Customer user name="CustomerTicketText" id="CustomerTicketText" type="text" value="" readonly="readonly" />
+            <a href="#" id="RemoveCustomerTicket" class="RemoveButton$AutoCompleteFieldName CustomerTicketRemove">
                 <i class="fa fa-minus-square-o"></i>
                 <span class="InvisibleText">Remove Ticket Customer User</span>
             </a>
         </div>
-        <div id="TicketCustomerContentFromCustomer" class="CustomerContainer">
+        <div id="TicketCustomerContent$AutoCompleteFieldName" class="CustomerContainer$AutoCompleteFieldName">
 END
 
     my $typeField = "Single customer";
@@ -532,10 +583,10 @@ END
     if($typeField eq  "Multiple customers"){
         $HTMLString .= <<"END";
             <div class="SpacingTopSmall ">
-                <input name="CustomerSelected" title="Select this customer as the main customer." id="CustomerSelected" class="CustomerTicketRadio" type="radio" value="$Count" $CustomerSelected  $CustomerDisabled />
-                <input name="CustomerKey_[% Data.Count | html %]" id="CustomerKey_[% Data.Count | html %]" class="CustomerKey" type="hidden" value="[% Data.CustomerKey | html %]"/>
-                <input class="CustomerTicketText Radio" title="Customer user name="CustomerTicketText_$Count" id="CustomerTicketText_$Count" type="text" value="$CustomerElement" readonly="readonly" />
-                <a href="#" id="RemoveCustomerTicket_[% Data.Count %]" class="RemoveButton CustomerTicketRemove">
+                <input name="CustomerSelected$AutoCompleteFieldName" title="Select this customer as the main customer." id="CustomerSelected$AutoCompleteFieldName" class="CustomerTicketRadio$AutoCompleteFieldName" type="radio" value="$Count" $CustomerSelected  $CustomerDisabled />
+                <input name="CustomerKey$AutoCompleteFieldName\_[% Data.Count | html %]" id="CustomerKey$AutoCompleteFieldName\_[% Data.Count | html %]" class="CustomerKey$AutoCompleteFieldName" type="hidden" value="[% Data.CustomerKey | html %]"/>
+                <input class="CustomerTicketText$AutoCompleteFieldName Radio" title="Customer user name="CustomerTicketText_$Count" id="CustomerTicketText_$Count" type="text" value="$CustomerElement" readonly="readonly" />
+                <a href="#" id="RemoveCustomerTicket_[% Data.Count %]" class="RemoveButton$AutoCompleteFieldName CustomerTicketRemove">
                     <i class="fa fa-minus-square-o"></i>
                     <span class="InvisibleText">Remove Ticket Customer User</span>
                 </a>
@@ -545,12 +596,12 @@ END
 
     $HTMLString .= "</div>";
 
-    my $MultipleCustomerCounter = 0;
+    my $MultipleCustomerCounter = 1;
     my $CustomerCounter = 0;
 
     if($MultipleCustomerCounter){
         $HTMLString .= <<"END";
-        <input name="CustomerTicketCounterFromCustomer" id="CustomerTicketCounterFromCustomer" type="hidden" value="$CustomerCounter"/>
+        <input name="CustomerTicketCounter$AutoCompleteFieldName" id="CustomerTicketCounter$AutoCompleteFieldName" type="hidden" value="$CustomerCounter"/>
 END
     }
 

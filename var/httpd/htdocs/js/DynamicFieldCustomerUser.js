@@ -198,7 +198,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      Saves Customer data for later restore.
      */
-    var BackupData = {
+    TargetNS.BackupDataDynamicFieldCustomerUser = {
         CustomerInfo: '',
         CustomerEmail: '',
         CustomerKey: ''
@@ -211,7 +211,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      Needed for the change event of customer fields, if ActiveAutoComplete is false (disabled).
      */
-        CustomerFieldChangeRunCount = {};
+    TargetNS.DynamicCustomerFieldChangeRunCount = {};
 
     /**
      * @private
@@ -225,7 +225,8 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     TargetNS.InitSearchDynamicFieldCustomerUser = function ($Element) {
         // get customer tickets for AgentTicketCustomer
         if (Core.Config.Get('Action') === 'AgentTicketCustomer') {
-            GetCustomerTickets($('#CustomerAutoComplete').val(), $('#CustomerID').val());
+            //alert("2");
+            //GetCustomerTickets($('#CustomerAutoComplete').val(), $('#CustomerID').val());
 
             $Element.blur(function () {
                 if ($Element.val() === '') {
@@ -238,12 +239,13 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
         // get customer tickets for AgentTicketPhone and AgentTicketEmail
         if ((Core.Config.Get('Action') === 'AgentTicketEmail' || Core.Config.Get('Action') === 'AgentTicketPhone') && $('#SelectedCustomerUser').val() !== '') {
-            GetCustomerTickets($('#SelectedCustomerUser').val());
+            //alert("3");
+            //GetCustomerTickets($('#SelectedCustomerUser').val());
         }
 
         // just save the initial state of the customer info
         if ($('#CustomerInfo').length) {
-            BackupData.CustomerInfo = $('#CustomerInfo .Content').html();
+            TargetNS.BackupDataDynamicFieldCustomerUser.CustomerInfo = $('#CustomerInfo .Content').html();
         }
 
         if (isJQueryObject($Element)) {
@@ -258,7 +260,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
             Core.App.Subscribe('Event.CustomerUserAddressBook.AddTicketCustomer.Callback.' + $Element.attr('id'), function(UserLogin, CustomerTicketText) {
                 $Element.val(CustomerTicketText);
-                TargetNS.AddTicketCustomer($Element.attr('id'), CustomerTicketText, UserLogin);
+                TargetNS.AddDynamicFieldCustomer($Element.attr('id'), CustomerTicketText, UserLogin);
             });
 
             Core.UI.Autocomplete.Init($Element, function (Request, Response) {
@@ -287,8 +289,8 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                 var CustomerKey = UI.item.key,
                     CustomerValue = UI.item.value;
 
-                BackupData.CustomerKey = CustomerKey;
-                BackupData.CustomerEmail = CustomerValue;
+                    TargetNS.BackupDataDynamicFieldCustomerUser.CustomerKey = CustomerKey;
+                    TargetNS.BackupDataDynamicFieldCustomerUser.CustomerEmail = CustomerValue;
 
                 $Element.val(CustomerValue);
 
@@ -329,13 +331,14 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     }
 
                     // get customer tickets
-                    GetCustomerTickets(CustomerKey);
+                    //alert("1");
+                    //GetCustomerTickets(CustomerKey);
 
                     // get customer data for customer info table
                     GetCustomerInfo(CustomerKey);
                 }
                 else {
-                    TargetNS.AddTicketCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey);
+                    TargetNS.AddDynamicFieldCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey);
                 }
             }, 'CustomerSearch');
 
@@ -351,7 +354,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             {
                 $Element.blur(function () {
                     var FieldValue = $(this).val();
-                    if (FieldValue !== BackupData.CustomerEmail && FieldValue !== BackupData.CustomerKey) {
+                    if (FieldValue !== TargetNS.BackupDataDynamicFieldCustomerUser.CustomerEmail && FieldValue !== TargetNS.BackupDataDynamicFieldCustomerUser.CustomerKey) {
                         $('#SelectedCustomerUser').val('');
                         $('#CustomerUserID').val('');
                         $('#CustomerID').val('');
@@ -359,7 +362,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                         $('#ShowCustomerID').html('');
 
                         // reset customer info table
-                        $('#CustomerInfo .Content').html(BackupData.CustomerInfo);
+                        $('#CustomerInfo .Content').html(TargetNS.BackupDataDynamicFieldCustomerUser.CustomerInfo);
 
                         if (Core.Config.Get('Action') === 'AgentTicketProcess' && typeof Core.Config.Get('CustomerFieldsToUpdate') !== 'undefined') {
                             // update services (trigger ServiceID change event)
@@ -388,7 +391,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
     /**
      * @name InitCustomerField
-     * @memberof Core.Agent.CustomerSearch
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @description
      *      This function initializes the customer fields.
@@ -415,26 +418,26 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     // probably the user clicked out of the field.
                     // This should also add the customer (the enetered value) to the list
 
-                    if (typeof CustomerFieldChangeRunCount[ObjectId] === 'undefined') {
-                        CustomerFieldChangeRunCount[ObjectId] = 1;
+                    if (typeof TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId] === 'undefined') {
+                        TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId] = 1;
                     }
                     else {
-                        CustomerFieldChangeRunCount[ObjectId]++;
+                        TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId]++;
                     }
 
                     if (Core.UI.Autocomplete.SearchButtonClicked[ObjectId]) {
-                        delete CustomerFieldChangeRunCount[ObjectId];
+                        delete TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId];
                         delete Core.UI.Autocomplete.SearchButtonClicked[ObjectId];
                         return false;
                     }
                     else {
-                        if (CustomerFieldChangeRunCount[ObjectId] === 1) {
+                        if (TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId] === 1) {
                             window.setTimeout(function () {
                                 $('#' + ObjectId).trigger('change');
                             }, 200);
                             return false;
                         }
-                        delete CustomerFieldChangeRunCount[ObjectId];
+                        delete TargetNS.DynamicCustomerFieldChangeRunCount[ObjectId];
                     }
                 }
 
@@ -450,13 +453,13 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     return false;
                 }
 
-                TargetNS.AddTicketCustomer(ObjectId, $('#' + ObjectId).val());
+                TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val());
                 return false;
             });
 
             $('#' + ObjectId).on('keypress', function (e) {
                 if (e.which === 13){
-                    TargetNS.AddTicketCustomer(ObjectId, $('#' + ObjectId).val());
+                    TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val());
                     return false;
                 }
             });
@@ -466,7 +469,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
     /**
      * @private
      * @name CheckPhoneCustomerCountLimit
-     * @memberof Core.Agent.CustomerSearch
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @description
      *      In AgentTicketPhone, this checks if more than one entry is allowed
@@ -484,7 +487,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             return;
         }
 
-        if ($('#TicketCustomerContentFromCustomer input.CustomerTicketText').length > 0) {
+        if ($('#TicketCustomerContentFromCustomer input.'+Field+'-DynamicCustomerText').length > 0) {
             $('#FromCustomer').val('').prop('disabled', true).prop('readonly', true);
             $('#Dest').trigger('focus');
         }
@@ -499,7 +502,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
     /**
      * @name AddTicketCustomer
-     * @memberof Core.Agent.CustomerSearch
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @returns {Boolean} Returns false.
      * @param {String} Field
@@ -509,7 +512,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      This function adds a new ticket customer
      */
-    TargetNS.AddTicketCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer) {
+    TargetNS.AddDynamicFieldCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer) {
 
         var $Clone = $('.CustomerTicketTemplate' + Field).clone(),
             CustomerTicketCounter = $('#CustomerTicketCounter' + Field).val(),
@@ -527,12 +530,14 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         }
 
         // check for duplicated entries
-        $('[class*=CustomerTicketText'+Field+']').each(function() {
+        $('[class*='+Field+'-DynamicCustomerText]').each(function() {
             if ($(this).val() === CustomerValue) {
                 IsDuplicated = true;
             }
         });
         if (IsDuplicated) {
+
+            alert('Entrou aqui');
             TargetNS.ShowDuplicatedDialog(Field);
             return false;
         }
@@ -581,7 +586,15 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             // set customer key if present
             if($(this).hasClass('CustomerKey'+ Field)) {
                 $(this).val(CustomerKey);
+
+                var o = new Option(CustomerKey, CustomerKey);
+                /// jquerify the DOM object 'o' so we can use the html method
+                $(o).html(CustomerKey);
+                $("#"+Field.replace("_AutoComplete","")).append(o);
+                $("#"+Field.replace("_AutoComplete","")+" option[value=\""+CustomerKey+"\"]").attr('selected', 'selected');
             }
+
+            
 
             // add event handler to remove button
             if($(this).hasClass('RemoveButton'+ Field)) {
@@ -589,7 +602,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                 // bind click function to remove button
                 $(this).on('click', function () {
                     // remove row
-                    TargetNS.RemoveCustomerTicket($(this),Field);
+                    TargetNS.RemoveCustomerTicket($(this),Field,CustomerKey);
 
                     // clear CustomerHistory table if there are no selected customer users
                     if ($('#TicketCustomerContent' + Field + ' .CustomerTicketRadio'+ Field).length === 0) {
@@ -657,13 +670,13 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
     /**
      * @name RemoveCustomerTicket
-     * @memberof Core.Agent.CustomerSearch
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @param {jQueryObject} Object - JQuery object used as base to delete it's parent.
      * @description
      *      This function removes a customer ticket entry.
      */
-    TargetNS.RemoveCustomerTicket = function (Object, Field) {
+    TargetNS.RemoveCustomerTicket = function (Object, Field,CustomerKey) {
         var TicketCustomerIDs = 0,
         $Field = Object.closest('.Field'),
         $Form;
@@ -678,6 +691,10 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         {
             $Form = Object.closest('form');
         }
+        console.log("sss",CustomerKey);
+
+        $("#"+Field.replace("_AutoComplete","")+" option[value='"+CustomerKey+"']").remove();
+
         Object.parent().remove();
         TicketCustomerIDs = $('.CustomerContainer'+Field+' input[type="radio"]').length;
         if (TicketCustomerIDs === 0) {
@@ -704,7 +721,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             $('.CustomerContainer'+Field+' input[type="radio"]:first').prop('checked', true).trigger('change');
         }
 
-        if ($Field.find('.CustomerTicketText'+Field+':visible').length === 0) {
+        if ($Field.find('.'+Field+'-DynamicCustomerText:visible').length === 0) {
             $Field.addClass('Hidden');
 
             //DeactivateSelectionCustomerID();
@@ -715,7 +732,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
     /**
      * @name ShowDuplicatedDialog
-     * @memberof Core.Agent.CustomerSearch
+     * @memberof DynamicFieldCustomerUser
      * @function
      * @param {String} Field - ID object of the element should receive the focus on close event.
      * @description

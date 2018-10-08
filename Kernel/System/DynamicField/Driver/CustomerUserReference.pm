@@ -273,91 +273,7 @@ sub PossibleValuesGet {
     my ( $Self, %Param ) = @_;
 
     my %PossibleValues;
-
-    # get used Constrictions
-    my $Constrictions = $Param{DynamicFieldConfig}->{Config}->{Constrictions};
-
-    # build search params from constrictions...
-    my @SearchParamsWhat;
-
-    # prepare constrictions
-    my %Constrictions = ();
-    if ( $Constrictions ) {
-        my @Constrictions = split(/[\n\r]+/, $Constrictions);
-        CONSTRICTION:
-        for my $Constriction ( @Constrictions ) {
-            my @ConstrictionRule = split(/::/, $Constriction);
-            my $ConstrictionCheck = 1;
-            # check for valid constriction
-            next CONSTRICTION if (
-                scalar(@ConstrictionRule) != 4
-                || $ConstrictionRule[0] eq ""
-                || $ConstrictionRule[1] eq ""
-                || $ConstrictionRule[2] eq ""
-            );
-
-            # only handle static constrictions in admininterface
-            if (
-                $ConstrictionRule[1] eq 'Configuration'
-            ) {
-                $Constrictions{$ConstrictionRule[0]} = $ConstrictionRule[2];
-            }
-        }
-    }
-
-    my @ITSMConfigItemClasses = ();
-    if(
-        defined( $Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses} )
-        && IsArrayRefWithData( $Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses} )
-    ) {
-        @ITSMConfigItemClasses = @{$Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses}};
-    }
-    else {
-        my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-            Class => 'ITSM::ConfigItem::Class',
-        );
-        for my $ClassID ( keys ( %{$ClassRef} ) ) {
-            push ( @ITSMConfigItemClasses, $ClassID );
-        }
-    }
-
-    for my $ClassID ( @ITSMConfigItemClasses ) {
-        # get current definition
-        my $XMLDefinition = $Self->{ITSMConfigItemObject}->DefinitionGet(
-            ClassID => $ClassID,
-        );
-
-        # prepare seach
-        $Self->_ExportXMLSearchDataPrepare(
-            XMLDefinition => $XMLDefinition->{DefinitionRef},
-            What          => \@SearchParamsWhat,
-            SearchData    => {
-                %Constrictions,
-            },
-        );
-    }
-
-    my $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-        Name         => '*',
-        ClassIDs     => \@ITSMConfigItemClasses,
-        DeplStateIDs => $Param{DynamicFieldConfig}->{Config}->{DeploymentStates},
-        What         => \@SearchParamsWhat,
-    );
-
-    for my $CIID ( @{$ConfigItemIDs} ) {
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $CIID,
-            XMLDataGet   => 0,
-        );
-
-        my $Label = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-        while ($Label =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Label =~ s/<CI_$1>/$Replace/g;
-        }
-
-        $PossibleValues{$CIID} = $Label;
-    }
+    
 
     # return the possible values hash as a reference
     return \%PossibleValues;
@@ -521,21 +437,21 @@ sub EditFieldRender {
         {
             margin-top:5px;
         }
-        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName,.CcCustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName,.BccCustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName
+        .CustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText,.CcCustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText,.BccCustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText
         {
             width:89%;
             margin-left:7px;
         }
-        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName
+        .CustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText
         {
             transition:background-color 1s ease,border 1s ease;
         }
-        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName.MainCustomer
+        .CustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText.MainCustomer
         {
             background-color:#F7ECC3;
             border:1px solid #E8CC8B;
         }
-        .CustomerContainer$AutoCompleteFieldName .CustomerTicketText$AutoCompleteFieldName.Radio
+        .CustomerContainer$AutoCompleteFieldName .$AutoCompleteFieldName-DynamicCustomerText.Radio
         {
             width:84%;
             margin-left:0px;
@@ -555,17 +471,17 @@ sub EditFieldRender {
         }
     </style>
     <div class="Field">
-        <input id="$ValueFieldName" type="hidden" name="$ValueFieldName" value="$Value" />
+        <select class="DynamicFieldText Modernize" id="$FieldName" multiple="multiple" name="$FieldName" style="display:none;" ></select>
         <input id="$AutoCompleteFieldName" type="text" name="$AutoCompleteFieldName" value="" class="$AutoCompleteFieldName W75pc $FromInvalid" autocomplete="off" />
-        <div id="$AutoCompleteFieldName\ServerError" class="TooltipErrorMessage">
+        <div id="$AutoCompleteFieldName-ServerError" class="TooltipErrorMessage">
         </div>
     </div>
     <div class="clear"></div>
     <div class="Field $CustomerHiddenContainer">
         <div class="CustomerTicketTemplate$AutoCompleteFieldName SpacingTopSmall Hidden">
-            <input name="CustomerSelected$AutoCompleteFieldName" title="Select this customer as the main customer." id="CustomerSelected$AutoCompleteFieldName" class="CustomerTicketRadio$AutoCompleteFieldName" type="radio" value=""/>
+            <input style="display:none;" name="CustomerSelected$AutoCompleteFieldName" title="Select this customer as the main customer." id="CustomerSelected$AutoCompleteFieldName" class="CustomerTicketRadio$AutoCompleteFieldName" type="radio" value=""/>
             <input name="CustomerKey$AutoCompleteFieldName" id="CustomerKey$AutoCompleteFieldName" class="CustomerKey$AutoCompleteFieldName" type="hidden" value=""/>
-            <input class="CustomerTicketText$AutoCompleteFieldName Radio" title="Customer user name="CustomerTicketText" id="CustomerTicketText" type="text" value="" readonly="readonly" />
+            <input class="$AutoCompleteFieldName-DynamicCustomerText Radio" title="Customer user name="$AutoCompleteFieldName-DynamicCustomerText" id="$AutoCompleteFieldName-DynamicCustomerText" type="text" value="" readonly="readonly" />
             <a href="#" id="RemoveCustomerTicket" class="RemoveButton$AutoCompleteFieldName CustomerTicketRemove">
                 <i class="fa fa-minus-square-o"></i>
                 <span class="InvisibleText">Remove Ticket Customer User</span>
@@ -573,7 +489,7 @@ sub EditFieldRender {
         </div>
         <div id="TicketCustomerContent$AutoCompleteFieldName" class="CustomerContainer$AutoCompleteFieldName">
 END
-
+#
     my $typeField = "Single customer";
     my $CustomerSelected = "";
     my $CustomerDisabled = "";
@@ -585,7 +501,7 @@ END
             <div class="SpacingTopSmall ">
                 <input name="CustomerSelected$AutoCompleteFieldName" title="Select this customer as the main customer." id="CustomerSelected$AutoCompleteFieldName" class="CustomerTicketRadio$AutoCompleteFieldName" type="radio" value="$Count" $CustomerSelected  $CustomerDisabled />
                 <input name="CustomerKey$AutoCompleteFieldName\_[% Data.Count | html %]" id="CustomerKey$AutoCompleteFieldName\_[% Data.Count | html %]" class="CustomerKey$AutoCompleteFieldName" type="hidden" value="[% Data.CustomerKey | html %]"/>
-                <input class="CustomerTicketText$AutoCompleteFieldName Radio" title="Customer user name="CustomerTicketText_$Count" id="CustomerTicketText_$Count" type="text" value="$CustomerElement" readonly="readonly" />
+                <input class="$AutoCompleteFieldName-DynamicCustomerText Radio" title="Customer user name="$AutoCompleteFieldName-DynamicCustomerText_$Count" id="$AutoCompleteFieldName-DynamicCustomerText_$Count" type="text" value="$CustomerElement" readonly="readonly" />
                 <a href="#" id="RemoveCustomerTicket_[% Data.Count %]" class="RemoveButton$AutoCompleteFieldName CustomerTicketRemove">
                     <i class="fa fa-minus-square-o"></i>
                     <span class="InvisibleText">Remove Ticket Customer User</span>
@@ -755,26 +671,6 @@ sub EditFieldValueValidate {
 
     my $ServerError;
     my $ErrorMessage;
-
-    # perform necessary validations
-    if ( $Param{Mandatory} && !IsArrayRefWithData($Values) ) {
-        return {
-            ServerError => 1,
-        };
-    }
-    else {
-
-        # validate if value is id of config item
-        for my $Item ( @{$Values} ) {
-            my $Number = $Self->{ITSMConfigItemObject}->ConfigItemLookup(
-                ConfigItemID => $Item,
-            );
-            if ( !$Number ) {
-                $ServerError  = 1;
-                $ErrorMessage = 'The field content is invalid';
-            }
-        }
-    }
 
     # create resulting structure
     my $Result = {

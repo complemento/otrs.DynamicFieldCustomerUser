@@ -237,12 +237,6 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             });
         }
 
-        // get customer tickets for AgentTicketPhone and AgentTicketEmail
-        if ((Core.Config.Get('Action') === 'AgentTicketEmail' || Core.Config.Get('Action') === 'AgentTicketPhone') && $('#SelectedCustomerUser').val() !== '') {
-            //alert("3");
-            //GetCustomerTickets($('#SelectedCustomerUser').val());
-        }
-
         // just save the initial state of the customer info
         if ($('#CustomerInfo').length) {
             TargetNS.BackupDataDynamicFieldCustomerUser.CustomerInfo = $('#CustomerInfo .Content').html();
@@ -264,6 +258,10 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             });
 
             Core.UI.Autocomplete.Init($Element, function (Request, Response) {
+                var baseUrl = Core.Config.Get('Baselink');
+
+                if(baseUrl.indexOf("customer.pl")> -1)
+                    baseUrl = baseUrl.replace("customer.pl","index.pl");
                 var URL = Core.Config.Get('Baselink'),
                     Data = {
                         Action: 'AgentCustomerSearch',
@@ -307,6 +305,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
                 if (
                     Core.Config.Get('Action') !== 'AgentTicketPhone'
+                    && Core.Config.Get('Action') !== 'CustomerTicketMessage'
                     && Core.Config.Get('Action') !== 'AgentTicketEmail'
                     && Core.Config.Get('Action') !== 'AgentTicketCompose'
                     && Core.Config.Get('Action') !== 'AgentTicketForward'
@@ -317,7 +316,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     // set hidden field SelectedCustomerUser
                     $('#SelectedCustomerUser').val(CustomerKey);
 
-                    ActivateSelectionCustomerID();
+                    //ActivateSelectionCustomerID();
 
                     // needed for AgentTicketCustomer.pm
                     if ($('#CustomerUserID').length) {
@@ -335,7 +334,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     //GetCustomerTickets(CustomerKey);
 
                     // get customer data for customer info table
-                    GetCustomerInfo(CustomerKey);
+                    //GetCustomerInfo(CustomerKey);
                 }
                 else {
                     TargetNS.AddDynamicFieldCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey,null, CustomerUserInputType);

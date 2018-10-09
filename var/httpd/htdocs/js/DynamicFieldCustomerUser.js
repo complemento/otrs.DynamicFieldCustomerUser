@@ -38,7 +38,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @param {String} Constriction - Semicolon separated string of constriction relevant parameters
      * @return nothing
      */
-    TargetNS.InitEditField = function (Identifier, IdentifierID, MaxArraySize, IDCounter, QueryDelay, MinQueryLength, Constriction) {
+    TargetNS.InitEditField = function (Identifier, IdentifierID, MaxArraySize, IDCounter, QueryDelay, MinQueryLength, Constriction, CustomerUserInputType) {
         Identifiers[Identifier] = new Object();
         Identifiers[Identifier]['AutoCompleteField']   = Identifier + '_AutoComplete';
         Identifiers[Identifier]['ContainerField']      = Identifier + '_Container';
@@ -55,7 +55,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         Identifiers[Identifier]['QueryDelay']          = QueryDelay;
         Identifiers[Identifier]['Constriction']        = new Object();
         $("#"+Identifiers[Identifier]['AutoCompleteField']+", ."+Identifiers[Identifier]['AutoCompleteField']).each(function () {
-            TargetNS.InitSearchDynamicFieldCustomerUser($(this));
+            TargetNS.InitSearchDynamicFieldCustomerUser($(this),CustomerUserInputType);
         });
         
     };
@@ -222,7 +222,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      Initializes the module.
      */
-    TargetNS.InitSearchDynamicFieldCustomerUser = function ($Element) {
+    TargetNS.InitSearchDynamicFieldCustomerUser = function ($Element,CustomerUserInputType) {
         // get customer tickets for AgentTicketCustomer
         if (Core.Config.Get('Action') === 'AgentTicketCustomer') {
             //alert("2");
@@ -260,7 +260,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
 
             Core.App.Subscribe('Event.CustomerUserAddressBook.AddTicketCustomer.Callback.' + $Element.attr('id'), function(UserLogin, CustomerTicketText) {
                 $Element.val(CustomerTicketText);
-                TargetNS.AddDynamicFieldCustomer($Element.attr('id'), CustomerTicketText, UserLogin);
+                TargetNS.AddDynamicFieldCustomer($Element.attr('id'), CustomerTicketText, UserLogin, null, CustomerUserInputType);
             });
 
             Core.UI.Autocomplete.Init($Element, function (Request, Response) {
@@ -338,7 +338,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     GetCustomerInfo(CustomerKey);
                 }
                 else {
-                    TargetNS.AddDynamicFieldCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey);
+                    TargetNS.AddDynamicFieldCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey,null, CustomerUserInputType);
                 }
             }, 'CustomerSearch');
 
@@ -373,7 +373,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             }
             else {
                 // initializes the customer fields
-                TargetNS.InitCustomerField();
+                TargetNS.InitCustomerField(CustomerUserInputType);
             }
         }
 
@@ -396,7 +396,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      This function initializes the customer fields.
      */
-    TargetNS.InitCustomerField = function () {
+    TargetNS.InitCustomerField = function (CustomerUserInputType) {        
 
         // loop over the field with CustomerAutoComplete class
         $('.CustomerAutoComplete').each(function() {
@@ -453,13 +453,13 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     return false;
                 }
 
-                TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val());
+                TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val(),null,null, CustomerUserInputType);
                 return false;
             });
 
             $('#' + ObjectId).on('keypress', function (e) {
                 if (e.which === 13){
-                    TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val());
+                    TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val(),null,null,CustomerUserInputType);
                     return false;
                 }
             });
@@ -512,8 +512,8 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @description
      *      This function adds a new ticket customer
      */
-    TargetNS.AddDynamicFieldCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer) {
-
+    TargetNS.AddDynamicFieldCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer, CustomerUserInputType) {
+        
         var $Clone = $('.CustomerTicketTemplate' + Field).clone(),
             CustomerTicketCounter = $('#CustomerTicketCounter' + Field).val(),
             TicketCustomerIDs = 0,
@@ -528,6 +528,11 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         if (CustomerValue === '') {
             return false;
         }
+
+        if($('[class*='+Field+'-DynamicCustomerText]').length> 1 && CustomerUserInputType === "Single contact"){
+            return false;
+        }
+            
 
         // check for duplicated entries
         $('[class*='+Field+'-DynamicCustomerText]').each(function() {

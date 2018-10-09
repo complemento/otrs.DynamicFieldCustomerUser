@@ -316,6 +316,13 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    use Data::Dumper;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        'Priority' => 'error',
+        'Message'  => "FieldConfig ".Dumper($FieldConfig->{CustomerUserInputType}),
+    );
+
     my $Value;
 
     # set the field value or default
@@ -533,7 +540,7 @@ END
 
     $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
 Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
-DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString");
+DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString", "$FieldConfig->{CustomerUserInputType}");
 END
 
     my $JSValueCounter = 0;
@@ -1108,10 +1115,13 @@ sub ReadableValueRender {
 sub DisplayValueRender {
     my ( $Self, %Param ) = @_;
 
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+
+
     # set HTMLOuput as default if not specified
     if ( !defined $Param{HTMLOutput} ) {
         $Param{HTMLOutput} = 1;
-    }
+    }    
 
     # get raw Value strings from field value
     my @Keys;
@@ -1128,83 +1138,38 @@ sub DisplayValueRender {
     for my $Key (@Keys) {
         next if ( !$Key );
 
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
+        my %User = $CustomerUserObject->CustomerUserDataGet(
+            User => $Key,
         );
 
-        my $EntryValue = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-        while ($EntryValue =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $EntryValue =~ s/<CI_$1>/$Replace/g;
-        }
+        
 
         # set title as value after update and before limit
-        my $EntryTitle = $EntryValue;
+        my $EntryTitle = $User{UserFirstname}.' '.$User{UserLastname};
+        my $EntryValue = $User{UserFirstname}.' '.$User{UserLastname};
 
-        # HTMLOuput transformations
-        if ( $Param{HTMLOutput} ) {
-            $EntryValue = $Param{LayoutObject}->Ascii2Html(
-                Text => $EntryValue,
-                Max => $Param{ValueMaxChars} || '',
+        my %CustomerData;
+        if ( $Key ) {
+            %CustomerData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+                User => $Key,
             );
-
-            $EntryTitle = $Param{LayoutObject}->Ascii2Html(
-                Text => $EntryTitle,
-                Max => $Param{TitleMaxChars} || '',
-            );
-
-            # set field link form config
-            my $HasLink = 0;
-            if (
-                $Param{LayoutObject}->{UserType} eq 'User'
-                && $Param{DynamicFieldConfig}->{Config}->{AgentLink}
-                )
-            {
-                $EntryValue
-                    = '<a href="'
-                    . $Param{DynamicFieldConfig}->{Config}->{AgentLink}
-                    . '" title="'
-                    . $EntryTitle
-                    . '" target="_blank" class="DynamicFieldLink">'
-                    . $EntryValue . '</a>';
-                $HasLink = 1;
-            }
-            elsif (
-                $Param{LayoutObject}->{UserType} eq 'Customer'
-                && $Param{DynamicFieldConfig}->{Config}->{CustomerLink}
-                )
-            {
-                $EntryValue
-                    = '<a href="'
-                    . $Param{DynamicFieldConfig}->{Config}->{CustomerLink}
-                    . '" title="'
-                    . $EntryTitle
-                    . '" target="_blank" class="DynamicFieldLink">'
-                    . $EntryValue . '</a>';
-                $HasLink = 1;
-            }
-            if ($HasLink) {
-                while ($EntryValue =~ m/<CI_([^>]+)>/) {
-                    my $Replace = $Param{LayoutObject}->LinkEncode($ConfigItem->{$1}) || '';
-                    $EntryValue =~ s/<CI_$1>/$Replace/g;
-                }
-
-                # Replace <SessionID>
-                if ( $EntryValue =~ /<SessionID>/ ) {
-                    my $Replace = $Param{LayoutObject}->{SessionID};
-                    $EntryValue =~ s/<SessionID>/$Replace/g;
-                }
-            }
         }
-        else {
-            if ( $Param{ValueMaxChars} && length($EntryValue) > $Param{ValueMaxChars} ) {
-                $EntryValue = substr( $EntryValue, 0, $Param{ValueMaxChars} ) . '...';
-            }
-            if ( $Param{TitleMaxChars} && length($EntryTitle) > $Param{TitleMaxChars} ) {
-                $EntryTitle = substr( $EntryTitle, 0, $Param{TitleMaxChars} ) . '...';
-            }
-        }
+        my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+        my $CustomerTable = $LayoutObject->AgentCustomerViewTable(
+            Data   => \%CustomerData,
+            Ticket => $Param{Ticket},
+            Max    => $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Frontend::CustomerInfoZoomMaxSize'),
+        );
+
+        my $Output = $LayoutObject->Output(
+            TemplateFile => 'AgentTicketZoom/CustomerInformation',
+            Data         => {
+                CustomerTable => $CustomerTable,
+            },
+        );
+
+        $EntryValue = $Output;
 
         push ( @Values, $EntryValue );
         push ( @Titles, $EntryTitle );

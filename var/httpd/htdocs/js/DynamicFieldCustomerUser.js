@@ -755,5 +755,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         );
     };
 
+    $(".widgetMove").each(function(){$(this).parent().parent().parent().parent().parent().find(".SidebarColumn").append($(this))});
+
     return TargetNS;
 }(DynamicFieldCustomerUser || {}));

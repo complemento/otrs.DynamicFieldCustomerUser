@@ -1134,6 +1134,7 @@ sub DisplayValueRender {
 
     my @Values;
     my @Titles;
+    my $HtmlOutput = "";
 
     for my $Key (@Keys) {
         next if ( !$Key );
@@ -1162,6 +1163,7 @@ sub DisplayValueRender {
             Max    => $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Frontend::CustomerInfoZoomMaxSize'),
         );
 
+        
         my $Output = $LayoutObject->Output(
             TemplateFile => 'AgentTicketZoom/CustomerInformation',
             Data         => {
@@ -1169,7 +1171,20 @@ sub DisplayValueRender {
             },
         );
 
-        $EntryValue = $Output;
+        my $widgetName = "widgetMove";
+
+        my $find = "class=\"WidgetSimple\"";
+        my $replace = "class=\"WidgetSimple $widgetName\"";
+
+        $Output = $Output =~ s/$find/$replace/r;
+
+        $find = $Param{LayoutObject}->{LanguageObject}->Translate("Customer Information");
+        $replace = $Param{DynamicFieldConfig}->{Label};
+
+        $Output = $Output =~ s/$find/$replace/r;
+
+        $HtmlOutput .=$Output;
+        $EntryValue = $Key;
 
         push ( @Values, $EntryValue );
         push ( @Titles, $EntryTitle );
@@ -1186,7 +1201,7 @@ sub DisplayValueRender {
 
     # create return structure
     my $Data = {
-        Value => $Value,
+        Value => $Value.$HtmlOutput,
         Title => $Title,
         Link  => $Link,
     };

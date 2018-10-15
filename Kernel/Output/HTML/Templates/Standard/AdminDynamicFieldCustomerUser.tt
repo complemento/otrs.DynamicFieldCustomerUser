@@ -128,7 +128,7 @@
                             <p class="FieldExplanation">[% Translate("Choose if the input should support a single contact or multiple contacts per field.") | html %]</p>
                         </div>
                         <div class="Clear"></div>
-                        <label for="MinQueryLength">[% Translate("MinQueryLength") | html %]:</label>
+                        <!--<label for="MinQueryLength">[% Translate("MinQueryLength") | html %]:</label>
                         <div class="Field">
                             <input id="MinQueryLength" class="W25pc Validate_Number [% Data.MinQueryLengthServerError %]" type="text" maxlength="2" value="[% Data.MinQueryLength | html %]" name="MinQueryLength"/>
                             <div id="MinQueryLengthError" class="TooltipErrorMessage"><p>[% Translate("This field must be numeric.") | html %]</p></div>
@@ -151,7 +151,7 @@
                             <div id="MaxQueryResultServerError" class="TooltipErrorMessage"><p>[% Translate(Data.MaxQueryResultServerErrorMessage) | html %]</p></div>
                             <p class="FieldExplanation">[% Translate("Specify the MaxQueryResult.") | html %]</p>
                         </div>
-                        <div class="Clear"></div>
+                        <div class="Clear"></div>-->
                     </fieldset>
                 </div>
             </div>

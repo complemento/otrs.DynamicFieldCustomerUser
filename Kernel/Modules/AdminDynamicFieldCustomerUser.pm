@@ -182,7 +182,7 @@ sub _AddAction {
         qw(
             ObjectType ObjectTypeName FieldType FieldTypeName ValidID
             Constrictions DisplayPattern MaxArraySize AgentLink CustomerLink
-            MinQueryLength QueryDelay MaxQueryResult
+            MinQueryLength QueryDelay MaxQueryResult CustomerUserInputType
         )
     ) {
         $GetParam{$ConfigParam} = $Self->{ParamObject}->GetParam( Param => $ConfigParam );

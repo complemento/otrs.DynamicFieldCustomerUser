@@ -1199,9 +1199,13 @@ sub DisplayValueRender {
     # this field type does not support the Link Feature in normal way. Links are provided via Value in HTMLOutput
     my $Link;
 
+    if($Param{LayoutObject}->{Action} ne 'CustomerTicketZoom'){
+        $Value .= $HtmlOutput;
+    }
+
     # create return structure
     my $Data = {
-        Value => $Value.$HtmlOutput,
+        Value => $Value,
         Title => $Title,
         Link  => $Link,
     };

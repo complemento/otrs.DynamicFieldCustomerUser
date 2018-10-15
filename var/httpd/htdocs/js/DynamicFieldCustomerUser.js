@@ -541,7 +541,6 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         });
         if (IsDuplicated) {
 
-            alert('Entrou aqui');
             TargetNS.ShowDuplicatedDialog(Field);
             return false;
         }

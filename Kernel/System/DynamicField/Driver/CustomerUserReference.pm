@@ -509,12 +509,12 @@ END
        $ValidValue = '1';
     }
 
-#     $HTMLString .= <<"END";
-#     <script type="language">
-#         Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
-#         DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString", "$FieldConfig->{CustomerUserInputType}");
-#     </script>
-# END
+     $HTMLString .= <<"END";
+     <script type="language">
+         Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
+         DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString", "$FieldConfig->{CustomerUserInputType}");
+     </script>
+END
 
     $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
 Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');

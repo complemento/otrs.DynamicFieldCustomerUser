@@ -86,19 +86,21 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      * @return nothing
      */
     TargetNS.InitAJAXUpdate = function (Identifier, FieldsToUpdate) {
-        $(Identifiers[Identifier]['FieldID']).bind('change', function (Event) {
-            var CurrentValue = '';
-            $('.InputField_Selection > input[name=' + Identifier + ']').each(function() {
-                if (CurrentValue.length > 0) {
-                    CurrentValue += ';';
+        if(Identifiers[Identifier] !== undefined){
+            $(Identifiers[Identifier]['FieldID']).bind('change', function (Event) {
+                var CurrentValue = '';
+                $('.InputField_Selection > input[name=' + Identifier + ']').each(function() {
+                    if (CurrentValue.length > 0) {
+                        CurrentValue += ';';
+                    }
+                    CurrentValue += encodeURIComponent($(this).val());
+                });
+                if ($(this).data('CurrentValue') != CurrentValue) {
+                    $(this).data('CurrentValue', CurrentValue);
+                    Core.AJAX.FormUpdate($(this).parents('form'), 'AJAXUpdate', Identifier, FieldsToUpdate, function(){}, undefined, false);
                 }
-                CurrentValue += encodeURIComponent($(this).val());
             });
-            if ($(this).data('CurrentValue') != CurrentValue) {
-                $(this).data('CurrentValue', CurrentValue);
-                Core.AJAX.FormUpdate($(this).parents('form'), 'AJAXUpdate', Identifier, FieldsToUpdate, function(){}, undefined, false);
-            }
-        });
+        }        
     };
 
     /**

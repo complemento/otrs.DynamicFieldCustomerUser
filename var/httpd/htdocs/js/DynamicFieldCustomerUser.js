@@ -453,13 +453,12 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
                     }, 200);
                     return false;
                 }
-
                 TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val(),null,null, CustomerUserInputType);
                 return false;
             });
 
             $('#' + ObjectId).on('keypress', function (e) {
-                if (e.which === 13){
+                if (e.which === 13){              
                     TargetNS.AddDynamicFieldCustomer(ObjectId, $('#' + ObjectId).val(),null,null,CustomerUserInputType);
                     return false;
                 }
@@ -514,6 +513,7 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
      *      This function adds a new ticket customer
      */
     TargetNS.AddDynamicFieldCustomer = function (Field, CustomerValue, CustomerKey, SetAsTicketCustomer, CustomerUserInputType) {
+        CustomerValue = CustomerValue.replace(/\"/g,"");
         
         var $Clone = $('.CustomerTicketTemplate' + Field).clone(),
             CustomerTicketCounter = $('#CustomerTicketCounter' + Field).val(),
@@ -591,7 +591,6 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
             // set customer key if present
             if($(this).hasClass('CustomerKey'+ Field)) {
                 $(this).val(CustomerKey);
-
                 var o = new Option(CustomerKey, CustomerKey);
                 /// jquerify the DOM object 'o' so we can use the html method
                 $(o).html(CustomerKey);
@@ -696,7 +695,6 @@ var DynamicFieldCustomerUser = (function (TargetNS) {
         {
             $Form = Object.closest('form');
         }
-        console.log("sss",CustomerKey);
 
         $("#"+Field.replace("_AutoComplete","")+" option[value='"+CustomerKey+"']").remove();
 

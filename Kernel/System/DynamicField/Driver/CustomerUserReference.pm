@@ -296,6 +296,8 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
 
+    my @Data = $Param{ParamObject}->GetArray( Param => $FieldName );   
+
     my $Value;
 
     # set the field value or default
@@ -509,12 +511,34 @@ END
        $ValidValue = '1';
     }
 
+    #TargetNS.AddDynamicFieldCustomer($(Event.target).attr('id'), CustomerValue, CustomerKey,null, CustomerUserInputType);
+
      $HTMLString .= <<"END";
      <script type="language">
          Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
          DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString", "$FieldConfig->{CustomerUserInputType}");
-     </script>
 END
+
+
+    ITEM:
+    for my $Item ( sort @Data ) {
+        my %CustomerData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+            User => $Item,
+        );
+
+        my $completeName = "$CustomerData{UserFirstname} $CustomerData{UserLastname} <$CustomerData{UserEmail}>";
+
+        $HTMLString .= <<"END";
+        DynamicFieldCustomerUser.AddDynamicFieldCustomer("$FieldName\_AutoComplete","$completeName","$Item",null,"$FieldConfig->{CustomerUserInputType}");
+END
+        #$Kernel::OM->Get('Kernel::System::Log')->Log(
+        #    Priority => 'error',
+        #    Message  => "Item ".Dumper($Item),
+        #);
+    }
+
+    $HTMLString .= 
+     "</script>";
 
     $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
 Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');

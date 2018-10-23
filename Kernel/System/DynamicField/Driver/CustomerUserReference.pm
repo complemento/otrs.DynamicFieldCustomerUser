@@ -453,7 +453,7 @@ sub EditFieldRender {
         }
     </style>
     <div class="Field $FieldClass">
-        <select class="DynamicFieldText Modernize" id="$FieldName" multiple="multiple" name="$FieldName" style="display:none;" ></select>
+        <select class="DynamicFieldText Modernize $FieldClass" id="$FieldName" multiple="multiple" name="$FieldName" style="display:none;" ></select>
         <input id="$AutoCompleteFieldName" type="text" name="$AutoCompleteFieldName" value="" class="$AutoCompleteFieldName W75pc $FromInvalid" autocomplete="off" />
         <div id="$AutoCompleteFieldName-ServerError" class="TooltipErrorMessage">
         </div>

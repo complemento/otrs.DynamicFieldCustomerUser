@@ -24,7 +24,6 @@ use List::Util qw(min);
 
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
-    'Kernel::System::GeneralCatalog',
     'Kernel::System::GenericAgent',
     'Kernel::System::Log',
     'Kernel::System::SysConfig',
@@ -58,7 +57,6 @@ sub new {
 
     # create additional objects...
     $Self->{DynamicFieldObject}   = $Kernel::OM->Get('Kernel::System::DynamicField');
-    $Self->{GeneralCatalogObject} = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     $Self->{GenericAgentObject}   = $Kernel::OM->Get('Kernel::System::GenericAgent');
     $Self->{LogObject}            = $Kernel::OM->Get('Kernel::System::Log');
     $Self->{ValidObject}          = $Kernel::OM->Get('Kernel::System::Valid');
@@ -277,13 +275,6 @@ sub _MigrateConfigBefore5 {
 
         if ( ref( $DynamicField->{Config}->{DeploymentStates} ) eq 'SCALAR' ) {
             $DynamicField->{Config}->{DeploymentStates} = [];
-            my $TempDeploymentStates = $DynamicField->{Config}->{DeploymentStates};
-            my $DeplStates = $Self->{GeneralCatalogObject}->ItemList(
-                Class => 'ITSM::ConfigItem::DeploymentState',
-            );
-            for my $State ( keys %{$DeplStates} ) {
-                push( @{$DynamicField->{Config}->{DeploymentStates}}, $State ) if( $TempDeploymentStates =~ /$DeplStates->{$State}/ );
-            }
         }
 
         if ( defined( $DynamicField->{Config}->{DisplayType} ) ) {

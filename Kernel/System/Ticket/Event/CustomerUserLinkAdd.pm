@@ -72,62 +72,8 @@ sub Run {
             Name => $Param{Event},
         );
 
-        return if ( $DynamicField->{FieldType} ne 'ITSMConfigItemReference' );
+        return if ( $DynamicField->{FieldType} ne 'CustomerUserReference' );
         return if ( !$Param{Data}->{Value} );
-
-        #remove link to update
-        my $linkList = $Self->{LinkObject}->LinkList(
-            Object    => 'Ticket',
-            Key       => $Param{Data}->{TicketID},
-            Object2   => 'ITSMConfigItem',         # (optional)
-            State     => 'Valid',
-            Type      => $Param{Config}->{LinkType}, # (optional)
-            UserID    => $Param{UserID},
-        );
-
-        if($linkList && $linkList->{'ITSMConfigItem'} && $linkList->{'ITSMConfigItem'}->{'RelevantTo'} && $linkList->{'ITSMConfigItem'}->{'RelevantTo'}->{'Source'}){
-            my $linkKeys = $linkList->{'ITSMConfigItem'}->{'RelevantTo'}->{'Source'};
-        
-            while (my ($key, $value) = each (%$linkKeys)){
-                my $True = $Self->{LinkObject}->LinkDelete(
-                    Object1 => 'Ticket',
-                    Key1    => $Param{Data}->{TicketID},
-                    Object2 => 'ITSMConfigItem',
-                    Key2    => $key,
-                    Type    => $Param{Config}->{LinkType},
-                    UserID  => 1,
-                );
-            }
-        }
-
-
-        if ( ref( $Param{Data}->{Value} ) eq 'ARRAY' ) {
-            for my $Value ( @{ $Param{Data}->{Value} } ) {
-
-                # add links to database
-                my $Success = $Self->{LinkObject}->LinkAdd(
-                    SourceObject => 'Ticket',
-                    SourceKey    => $Param{Data}->{TicketID},
-                    TargetObject => 'ITSMConfigItem',
-                    TargetKey    => $Value,
-                    Type         => $Param{Config}->{LinkType},
-                    State        => 'Valid',
-                    UserID       => $Param{UserID},
-                );
-            }
-        }
-        else {
-            # add links to database
-            my $Success = $Self->{LinkObject}->LinkAdd(
-                SourceObject => 'Ticket',
-                SourceKey    => $Param{Data}->{TicketID},
-                TargetObject => 'ITSMConfigItem',
-                TargetKey    => $Param{Data}->{Value},
-                Type         => $Param{Config}->{LinkType},
-                State        => 'Valid',
-                UserID       => $Param{UserID},
-            );
-        }
     }
 
     return 1;

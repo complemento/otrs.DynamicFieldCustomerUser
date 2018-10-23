@@ -581,15 +581,6 @@ sub _DefaultValueSearch {
     $Search = '*' . $Search . '*';
     $Self->{EncodeObject}->EncodeInput( \$Search );
 
-    # get used ITSMConfigItemClasses
-    my @ITSMConfigItemClasses = $Self->{ParamObject}->GetArray( Param => 'ITSMConfigItemClasses' );
-
-    # get used DeploymentStates
-    my @DeploymentStates = $Self->{ParamObject}->GetArray( Param => 'DeploymentStates' );
-
-    # get used Constrictions
-    my $Constrictions = $Self->{ParamObject}->GetParam( Param => 'Constrictions' ) || '';
-
     # get display type
     my $DisplayPattern = uri_unescape($Self->{ParamObject}->GetParam( Param => 'DisplayPattern' )) || '<CI_Name>';
 
@@ -599,110 +590,7 @@ sub _DefaultValueSearch {
     # build search params from constrictions...
     my @SearchParamsWhat;
 
-    # prepare constrictions
-    my %Constrictions = ();
-    if ( $Constrictions ) {
-        my @Constrictions = split(/[\n\r]+/, $Constrictions);
-        RESTRICTION:
-        for my $Constriction ( @Constrictions ) {
-            my @ConstrictionRule = split(/::/, $Constriction);
-            # check for valid constriction
-            next RESTRICTION if (
-                scalar(@ConstrictionRule) != 4
-                || $ConstrictionRule[0] eq ""
-                || $ConstrictionRule[1] eq ""
-                || $ConstrictionRule[2] eq ""
-            );
-
-            # only handle static constrictions in admininterface
-            if (
-                $ConstrictionRule[1] eq 'Configuration'
-            ) {
-                $Constrictions{$ConstrictionRule[0]} = $ConstrictionRule[2];
-            }
-        }
-    }
-
-    if ( !scalar(@ITSMConfigItemClasses) ) {
-        my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-            Class => 'ITSM::ConfigItem::Class',
-        );
-        for my $ClassID ( keys ( %{$ClassRef} ) ) {
-            push ( @ITSMConfigItemClasses, $ClassID );
-        }
-    }
-
-    for my $ClassID (@ITSMConfigItemClasses) {
-        # get current definition
-        my $XMLDefinition = $Self->{ITSMConfigItemObject}->DefinitionGet(
-            ClassID => $ClassID,
-        );
-
-        # prepare seach
-        $Self->_ExportXMLSearchDataPrepare(
-            XMLDefinition => $XMLDefinition->{DefinitionRef},
-            What          => \@SearchParamsWhat,
-            SearchData    => {
-                %Constrictions,
-            },
-        );
-    }
-
-    my %ConfigItemIDs;
-    my $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-        Name         => $Search,
-        ClassIDs     => \@ITSMConfigItemClasses,
-        DeplStateIDs => \@DeploymentStates,
-        What         => \@SearchParamsWhat,
-    );
-
-    for my $ID ( @{$ConfigItemIDs} ) {
-        $ConfigItemIDs{$ID} = 1;
-    }
-
-    $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-        Number       => $Search,
-        ClassIDs     => \@ITSMConfigItemClasses,
-        DeplStateIDs => \@DeploymentStates,
-        What         => \@SearchParamsWhat,
-    );
-
-    for my $ID ( @{$ConfigItemIDs} ) {
-        $ConfigItemIDs{$ID} = 1;
-    }
-
     my @PossibleValues;
-    my $MaxCount = 1;
-    CIID:
-    for my $Key ( sort keys %ConfigItemIDs ) {
-        next CIID if ( grep { /^$Key$/ } @Entries );
-
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
-        );
-
-        my $Label = $DisplayPattern || '<CI_Name>';
-        while ($Label =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Label =~ s/<CI_$1>/$Replace/g;
-        }
-
-        my $Title = $ConfigItem->{Name};
-
-        push (
-            @PossibleValues,
-            {
-                Key    => $Key,
-                Value  => $Label,
-                Search => $Param{Search},
-                Label  => $Label,
-                Title  => $Title,
-            }
-        );
-        last CIID if ($MaxCount == 25);
-        $MaxCount++;
-    }
 
     # build JSON output
     my $JSON = $Self->{LayoutObject}->JSONEncode(

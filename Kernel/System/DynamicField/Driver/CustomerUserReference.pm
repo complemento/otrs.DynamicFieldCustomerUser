@@ -20,8 +20,6 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::DB',
     'Kernel::System::DynamicFieldValue',
-    'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::Ticket::ColumnFilter',
@@ -52,8 +50,6 @@ sub new {
     # create additional objects
     $Self->{ConfigObject}            = $Kernel::OM->Get('Kernel::Config');
     $Self->{DynamicFieldValueObject} = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
-    $Self->{GeneralCatalogObject}    = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    $Self->{ITSMConfigItemObject}    = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
 
     # get the fields config
     $Self->{FieldTypeConfig} = $Self->{ConfigObject}->Get('DynamicFields::Driver') || {};
@@ -69,7 +65,7 @@ sub new {
     };
 
     # get the Dynamic Field Backend custom extensions
-    my $DynamicFieldDriverExtensions = $Self->{ConfigObject}->Get('DynamicFields::Extension::Driver::ITSMConfigItemReference');
+    my $DynamicFieldDriverExtensions = $Self->{ConfigObject}->Get('DynamicFields::Extension::Driver::CustomerUserReference');
 
     EXTENSION:
     for my $ExtensionKey ( sort keys %{$DynamicFieldDriverExtensions} ) {
@@ -190,24 +186,6 @@ sub ValueLookup {
 
         # set the value as the key by default
         my $Value = $Item;
-
-        # try to convert key to real value
-        my $Number = $Self->{ITSMConfigItemObject}->ConfigItemLookup(
-            ConfigItemID => $Item,
-        );
-        if ( $Number ) {
-            my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-                ConfigItemID => $Item,
-                XMLDataGet   => 0,
-            );
-
-            $Value = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-            while ($Value =~ m/<CI_([^>]+)>/) {
-                my $Replace = $ConfigItem->{$1} || '';
-                $Value =~ s/<CI_$1>/$Replace/g;
-            }
-        }
-        push ( @Values, $Value );
     }
 
     return \@Values;
@@ -315,13 +293,6 @@ sub EditFieldRender {
     my $FieldID     = $Param{DynamicFieldConfig}->{ID};
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $FieldLabel  = $Param{DynamicFieldConfig}->{Label};
-
-    use Data::Dumper;
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        'Priority' => 'error',
-        'Message'  => "FieldConfig ".Dumper($FieldConfig->{CustomerUserInputType}),
-    );
 
     my $Value;
 
@@ -737,181 +708,6 @@ sub SearchFieldRender {
         <div id="$ContainerFieldName" class="InputField_InputContainer" style="display:block;">
 END
 
-    my $ValueCounter = 0;
-    for my $Key ( @{ $Value } ) {
-        next if (!$Key);
-        $ValueCounter++;
-
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
-        );
-
-        my $Label = $FieldConfig->{DisplayPattern} || '<CI_Name>';
-        while ($Label =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Label =~ s/<CI_$1>/$Replace/g;
-        }
-
-        my $Title = $ConfigItem->{Name};
-
-        $HTMLString .= <<"END";
-        <div class="InputField_Selection" style="display:block;position:inherit;top:0px;">
-            <input id="$ValueFieldName$ValueCounter" type="hidden" name="$FieldName" value="$Key" />
-            <div class="Text" title="$Title">$Label</div><div class="Remove"><a href="#" role="button" title="$TranslateRemoveSelection" tabindex="-1" aria-label="$TranslateRemoveSelection: $Label">x</a></div>
-            <div class="Clear"></div>
-        </div>
-<script type="text/javascript">//<![CDATA[
-    function Init$ValueFieldName$ValueCounter() {
-        \$('#$ValueFieldName$ValueCounter').siblings('div.Remove').find('a').bind('click', function() {
-            \$('#$ValueFieldName$ValueCounter').parent().remove();
-            if (\$('input[name=$FieldName]').length == 0) {
-                \$('#$ContainerFieldName').hide();
-            }
-            return false;
-        });
-    }
-    function Wait$ValueFieldName$ValueCounter() {
-        if (window.jQuery) {
-            \$('#Attribute').bind('redraw.InputField', function() {
-                Init$ValueFieldName$ValueCounter();
-            });
-            if (
-                \$('form[name=compose] input[name=Action]').first().val() == 'AdminGenericAgent'
-                && \$('form[name=compose] input[name=Subaction]').first().val() == 'UpdateAction'
-            ) {
-                Init$ValueFieldName$ValueCounter();
-            }
-            if (
-                \$('form[name=compose] input[name=Action]').first().val() == 'AdminNotificationEvent'
-                && (
-                    \$('form[name=compose] input[name=Subaction]').first().val() == 'ChangeAction'
-                    || \$('form[name=compose] input[name=Subaction]').first().val() == 'AddAction'
-                )
-            ) {
-                Init$ValueFieldName$ValueCounter();
-            }
-        } else {
-            window.setTimeout(Wait$ValueFieldName$ValueCounter, 1);
-        }
-    }
-    window.setTimeout(Wait$ValueFieldName$ValueCounter, 0);
-//]]></script>
-END
-    }
-
-    $HTMLString .= <<"END";
-        </div>
-        <div class="Clear"></div>
-    </div>
-<script type="text/javascript">//<![CDATA[
-    function Init$AutoCompleteFieldName() {
-        var $IDCounterName = $ValueCounter;
-        \$('#$AutoCompleteFieldName').autocomplete({
-            delay: $FieldConfig->{QueryDelay},
-            minLength: $FieldConfig->{MinQueryLength},
-            source: function (Request, Response) {
-                var Data = {};
-                Data.Action         = 'DynamicFieldCustomerUserAJAXHandler';
-                Data.Subaction      = 'Search';
-                Data.ConfigOnly     = '1';
-                Data.FieldPrefix    = 'Search_';
-                Data.Search         = Request.term;
-                Data.DynamicFieldID = $FieldID;
-
-                var QueryString = Core.AJAX.SerializeForm(\$('#$AutoCompleteFieldName'), Data);
-                \$.each(Data, function (Key, Value) {
-                    QueryString += ';' + encodeURIComponent(Key) + '=' + encodeURIComponent(Value);
-                });
-
-                if (\$('#$AutoCompleteFieldName').data('AutoCompleteXHR')) {
-                    \$('#$AutoCompleteFieldName').data('AutoCompleteXHR').abort();
-                    \$('#$AutoCompleteFieldName').removeData('AutoCompleteXHR');
-                }
-                \$('#$AutoCompleteFieldName').data('AutoCompleteXHR', Core.AJAX.FunctionCall(Core.Config.Get('CGIHandle'), QueryString, function (Result) {
-                    var Data = [];
-                    \$.each(Result, function () {
-                        Data.push({
-                            key:   this.Key,
-                            value: this.Value,
-                            title: this.Title
-                        });
-                    });
-                    \$('#$AutoCompleteFieldName').data('AutoCompleteData', Data);
-                    \$('#$AutoCompleteFieldName').removeData('AutoCompleteXHR');
-                    Response(Data);
-                }).fail(function() {
-                    Response(\$('#$AutoCompleteFieldName').data('AutoCompleteData'));
-                }));
-            },
-            select: function (Event, UI) {
-                $IDCounterName++;
-                \$('#$ContainerFieldName').append(
-                    '<div class="InputField_Selection" style="display:block;position:inherit;top:0px;">'
-                    + '<input id="$ValueFieldName'
-                    + $IDCounterName
-                    + '" type="hidden" name="$FieldName" value="'
-                    + UI.item.key
-                    + '" />'
-                    + '<div class="Text" title="'
-                    + UI.item.title
-                    + '">'
-                    + UI.item.value
-                    + '</div>'
-                    + '<div class="Remove"><a href="#" role="button" title="$TranslateRemoveSelection" tabindex="-1" aria-label="$TranslateRemoveSelection: '
-                    + UI.item.value
-                    + '">x</a></div><div class="Clear"></div>'
-                    + '</div>'
-                );
-                \$('#$ValueFieldName' + $IDCounterName).siblings('div.Remove').find('a').data('counter', $IDCounterName);
-                \$('#$ValueFieldName' + $IDCounterName).siblings('div.Remove').find('a').bind('click', function() {
-                    \$('#$ValueFieldName' + \$(this).data('counter')).parent().remove();
-                    if (\$('input[name=$FieldName]').length == 0) {
-                        \$('#$ContainerFieldName').hide();
-                    }
-                    return false;
-                });
-                \$('#$ContainerFieldName').show();
-                \$('#$AutoCompleteFieldName').val('');
-                Event.preventDefault();
-                return false;
-            },
-        });
-        \$('#$AutoCompleteFieldName').blur(function() {
-            \$(this).val('');
-        });
-
-        if (\$('input[name=$FieldName]').length == 0) {
-            \$('#$ContainerFieldName').hide();
-        }
-    }
-    function Wait$AutoCompleteFieldName() {
-        if (window.jQuery) {
-            \$('#Attribute').bind('redraw.InputField', function() {
-                Init$AutoCompleteFieldName();
-            });
-            if (
-                \$('form[name=compose] input[name=Action]').first().val() == 'AdminGenericAgent'
-                && \$('form[name=compose] input[name=Subaction]').first().val() == 'UpdateAction'
-            ) {
-                Init$AutoCompleteFieldName();
-            }
-            if (
-                \$('form[name=compose] input[name=Action]').first().val() == 'AdminNotificationEvent'
-                && (
-                    \$('form[name=compose] input[name=Subaction]').first().val() == 'ChangeAction'
-                    || \$('form[name=compose] input[name=Subaction]').first().val() == 'AddAction'
-                )
-            ) {
-                Init$AutoCompleteFieldName();
-            }
-        } else {
-            window.setTimeout(Wait$AutoCompleteFieldName, 1);
-        }
-    }
-    window.setTimeout(Wait$AutoCompleteFieldName, 0);
-//]]></script>
-END
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
@@ -976,19 +772,6 @@ sub SearchFieldParameterBuild {
             my @DisplayItemList;
             for my $Item ( @{$Value} ) {
 
-                # set the display value
-                my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-                    ConfigItemID => $Item,
-                    XMLDataGet   => 0,
-                );
-
-                my $DisplayItem = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-                while ($DisplayItem =~ m/<CI_([^>]+)>/) {
-                    my $Replace = $ConfigItem->{$1} || '';
-                    $DisplayItem =~ s/<CI_$1>/$Replace/g;
-                }
-
-                push @DisplayItemList, $DisplayItem;
             }
 
             # combine different values into one string
@@ -996,17 +779,7 @@ sub SearchFieldParameterBuild {
         }
         else {
 
-            # set the display value
-            my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-                ConfigItemID => $Value,
-                XMLDataGet   => 0,
-            );
-
-            $DisplayValue = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-            while ($DisplayValue =~ m/<CI_([^>]+)>/) {
-                my $Replace = $ConfigItem->{$1} || '';
-                $DisplayValue =~ s/<CI_$1>/$Replace/g;
-            }
+            
         }
     }
 
@@ -1216,50 +989,12 @@ sub DisplayValueRender {
 sub StatsFieldParameterBuild {
     my ( $Self, %Param ) = @_;
 
-    my @ITSMConfigItemClasses = ();
-    if(
-        defined( $Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses} )
-        && IsArrayRefWithData( $Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses} )
-    ) {
-        @ITSMConfigItemClasses = @{$Param{DynamicFieldConfig}->{Config}->{ITSMConfigItemClasses}};
-    }
-    else {
-        my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-            Class => 'ITSM::ConfigItem::Class',
-        );
-        for my $ClassID ( keys ( %{$ClassRef} ) ) {
-            push ( @ITSMConfigItemClasses, $ClassID );
-        }
-    }
-
     # set PossibleValues
     my $Values;
 
     my %DefaultValuesList;
 
-    my $DeplStates = $Self->{GeneralCatalogObject}->ItemList(
-        Class => 'ITSM::ConfigItem::DeploymentState',
-    );
-
-    my $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearch(
-        ClassIDs     => \@ITSMConfigItemClasses,
-        DeplStateIDs => $Param{DynamicFieldConfig}->{Config}->{DeploymentStates},
-        UserID       => $Param{UserID},
-    );
-
-    for my $CIID ( @{$ConfigItemIDs} ) {
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $CIID,
-        );
-
-        $DefaultValuesList{$CIID} = $Param{DynamicFieldConfig}->{Config}->{DisplayPattern} || '<CI_Name>';
-        while ($DefaultValuesList{$CIID} =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $DefaultValuesList{$CIID} =~ s/<CI_$1>/$Replace/g;
-        }
-    }
-
-    $Values = \%DefaultValuesList;
+    
 
     # get historical values from database
     my $HistoricalValues = $Self->{DynamicFieldValueObject}->HistoricalValueGet(
@@ -1308,21 +1043,6 @@ sub ColumnFilterValuesGet {
         FieldID   => $Param{DynamicFieldConfig}->{ID},
         ValueType => 'Text',
     );
-
-    # get the display value if still exist in dynamic field configuration
-    for my $Key ( sort ( keys ( %{$ColumnFilterValues} ) ) ) {
-        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-            ConfigItemID => $Key,
-            XMLDataGet   => 0,
-        );
-
-        my $Value = $FieldConfig->{DisplayPattern} || '<CI_Name>';
-        while ($Value =~ m/<CI_([^>]+)>/) {
-            my $Replace = $ConfigItem->{$1} || '';
-            $Value =~ s/<CI_$1>/$Replace/g;
-        }
-        $ColumnFilterValues->{$Key} = $Value;
-    }
 
     return $ColumnFilterValues;
 }

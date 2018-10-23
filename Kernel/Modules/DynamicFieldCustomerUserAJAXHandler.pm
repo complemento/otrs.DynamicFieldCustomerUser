@@ -23,8 +23,6 @@ our @ObjectDependencies = (
     'Kernel::System::CustomerUser',
     'Kernel::System::DynamicField',
     'Kernel::System::Encode',
-    'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
     'Kernel::System::Log',
     'Kernel::System::Ticket',
     'Kernel::System::Web::Request',
@@ -48,8 +46,6 @@ sub Run {
     $Self->{CustomerUserObject}            = $Kernel::OM->Get('Kernel::System::CustomerUser');
     $Self->{DynamicFieldObject}            = $Kernel::OM->Get('Kernel::System::DynamicField');
     $Self->{EncodeObject}                  = $Kernel::OM->Get('Kernel::System::Encode');
-    $Self->{GeneralCatalogObject}          = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    $Self->{ITSMConfigItemObject}          = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     $Self->{LogObject}                     = $Kernel::OM->Get('Kernel::System::Log');
     $Self->{TicketObject}                  = $Kernel::OM->Get('Kernel::System::Ticket');
     $Self->{ParamObject}                   = $Kernel::OM->Get('Kernel::System::Web::Request');
@@ -69,10 +65,10 @@ sub Run {
             ID => $DynamicFieldID,
         );
 
-        if ( $DynamicFieldConfig->{FieldType} ne 'ITSMConfigItemReference' ) {
+        if ( $DynamicFieldConfig->{FieldType} ne 'CustomerUserReference' ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message => "DynamicFieldCusromerUserAJAXHandler: DynamicField doesn't refer to type ITSMConfigItem.",
+                Message => "DynamicFieldCustomerUserAJAXHandler: DynamicField doesn't refer to type CustomerUser.",
             );
             return;
         }
@@ -203,97 +199,6 @@ sub Run {
                         }
                     }
                 }
-
-                if ($ConstrictionsCheck) {
-
-                    my @ITSMConfigItemClasses = ();
-                    if(
-                        defined( $DynamicFieldConfig->{Config}->{ITSMConfigItemClasses} )
-                        && IsArrayRefWithData( $DynamicFieldConfig->{Config}->{ITSMConfigItemClasses} )
-                    ) {
-                        @ITSMConfigItemClasses = @{$DynamicFieldConfig->{Config}->{ITSMConfigItemClasses}};
-                    }
-                    else {
-                        my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-                            Class => 'ITSM::ConfigItem::Class',
-                        );
-                        for my $ClassID ( keys ( %{$ClassRef} ) ) {
-                            push ( @ITSMConfigItemClasses, $ClassID );
-                        }
-                    }
-
-                    for my $ClassID ( @ITSMConfigItemClasses ) {
-                        # get current definition
-                        my $XMLDefinition = $Self->{ITSMConfigItemObject}->DefinitionGet(
-                            ClassID => $ClassID,
-                        );
-
-                        # prepare seach
-                        $Self->_ExportXMLSearchDataPrepare(
-                            XMLDefinition => $XMLDefinition->{DefinitionRef},
-                            What          => \@SearchParamsWhat,
-                            SearchData    => {
-                                %Constrictions,
-                            },
-                        );
-                    }
-
-                    $Search = '*' . $Search . '*';
-
-                    if ( !scalar( @SearchParamsWhat ) ) {
-                        @SearchParamsWhat = undef;
-                    }
-
-                    my %ConfigItemIDs;
-                    my $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-                        Name         => $Search,
-                        ClassIDs     => \@ITSMConfigItemClasses,
-                        DeplStateIDs => $DynamicFieldConfig->{Config}->{DeploymentStates},
-                        What         => \@SearchParamsWhat,
-                    );
-
-                    for my $ID ( @{$ConfigItemIDs} ) {
-                        $ConfigItemIDs{$ID} = 1;
-                    }
-
-                    $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-                        Number       => $Search,
-                        ClassIDs     => \@ITSMConfigItemClasses,
-                        DeplStateIDs => $DynamicFieldConfig->{Config}->{DeploymentStates},
-                        What         => \@SearchParamsWhat,
-                    );
-
-                    for my $ID ( @{$ConfigItemIDs} ) {
-                        $ConfigItemIDs{$ID} = 1;
-                    }
-
-                    my $MaxCount = 1;
-                    CIID:
-                    for my $Key ( sort ( keys ( %ConfigItemIDs ) ) ) {
-                        next CIID if ( grep { /^$Key$/ } @Entries  );
-
-                        my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-                            ConfigItemID => $Key,
-                            XMLDataGet   => 0,
-                        );
-
-                        my $Value = $DynamicFieldConfig->{Config}->{DisplayPattern} || '<CI_Name>';
-                        while ($Value =~ m/<CI_([^>]+)>/) {
-                            my $Replace = $ConfigItem->{$1} || '';
-                            $Value =~ s/<CI_$1>/$Replace/g;
-                        }
-
-                        my $Title = $ConfigItem->{Name};
-
-                        push @PossibleValues, {
-                            Key   => $Key,
-                            Value => $Value,
-                            Title => $Title,
-                        };
-                        last CIID if ($MaxCount == ($DynamicFieldConfig->{Config}->{MaxQueryResult} || 10));
-                        $MaxCount++;
-                    }
-                }
             }
 
             # build JSON output
@@ -405,60 +310,6 @@ sub Run {
                 }
             }
 
-            if ($ConstrictionsCheck) {
-
-                my @ITSMConfigItemClasses = ();
-                if(
-                    defined( $DynamicFieldConfig->{Config}->{ITSMConfigItemClasses} )
-                    && IsArrayRefWithData( $DynamicFieldConfig->{Config}->{ITSMConfigItemClasses} )
-                ) {
-                    @ITSMConfigItemClasses = @{$DynamicFieldConfig->{Config}->{ITSMConfigItemClasses}};
-                }
-                else {
-                    my $ClassRef = $Self->{GeneralCatalogObject}->ItemList(
-                        Class => 'ITSM::ConfigItem::Class',
-                    );
-                    for my $ClassID ( keys ( %{$ClassRef} ) ) {
-                        push ( @ITSMConfigItemClasses, $ClassID );
-                    }
-                }
-
-                for my $ClassID ( @ITSMConfigItemClasses ) {
-                    # get current definition
-                    my $XMLDefinition = $Self->{ITSMConfigItemObject}->DefinitionGet(
-                        ClassID => $ClassID,
-                    );
-
-                    # prepare seach
-                    $Self->_ExportXMLSearchDataPrepare(
-                        XMLDefinition => $XMLDefinition->{DefinitionRef},
-                        What          => \@SearchParamsWhat,
-                        SearchData    => {
-                            %Constrictions,
-                        },
-                    );
-                }
-
-                if ( !scalar( @SearchParamsWhat ) ) {
-                    @SearchParamsWhat = undef;
-                }
-
-                my $ConfigItemIDs = $Self->{ITSMConfigItemObject}->ConfigItemSearchExtended(
-                    Name         => '*',
-                    ClassIDs     => \@ITSMConfigItemClasses,
-                    DeplStateIDs => $DynamicFieldConfig->{Config}->{DeploymentStates},
-                    What         => \@SearchParamsWhat,
-                );
-
-                CIID:
-                for my $Key ( @{$ConfigItemIDs} ) {
-                    next CIID if ( !grep { /^$Key$/ } @Entries );
-
-                    push ( @PossibleValues, $Key );
-                }
-
-            }
-
             # build JSON output
             $JSON = $Self->{LayoutObject}->JSONEncode(
                 Data => \@PossibleValues,
@@ -467,31 +318,7 @@ sub Run {
 
         # handle subaction AddValue
         elsif($Subaction eq 'AddValue') {
-            my %Data;
-            my $Key = $Self->{ParamObject}->GetParam( Param => 'Key' )  || '';
-            if ( !grep { /^$Key$/ } @Entries ) {
-                my $ConfigItem = $Self->{ITSMConfigItemObject}->VersionGet(
-                    ConfigItemID => $Key,
-                    XMLDataGet   => 0,
-                );
 
-                my $Value = $DynamicFieldConfig->{Config}->{DisplayPattern} || '<CI_Name>';
-                while ($Value =~ m/<CI_([^>]+)>/) {
-                    my $Replace = $ConfigItem->{$1} || '';
-                    $Value =~ s/<CI_$1>/$Replace/g;
-                }
-
-                my $Title = $ConfigItem->{Name};
-
-                $Data{Key}   = $Key;
-                $Data{Value} = $Value;
-                $Data{Title} = $Title;
-
-                # build JSON output
-                $JSON = $Self->{LayoutObject}->JSONEncode(
-                    Data => \%Data,
-                );
-            }
         }
 
     }
@@ -513,42 +340,7 @@ sub _ExportXMLSearchDataPrepare {
     return if !$Param{What}          || ref $Param{What}          ne 'ARRAY';
     return if !$Param{SearchData}    || ref $Param{SearchData}    ne 'HASH';
 
-    # my config item object
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-
-    ITEM:
-    for my $Item ( @{ $Param{XMLDefinition} } ) {
-
-        # create key
-        my $Key = $Param{Prefix} ? $Param{Prefix} . '::' . $Item->{Key} : $Item->{Key};
-        my $DataKey = $Item->{Key};
-
-        # prepare value
-        my $Values = $Param{SearchData}->{$DataKey};
-        if ($Values) {
-
-            # create search key
-            my $SearchKey = $Key;
-            $SearchKey =~ s{ :: }{\'\}[%]\{\'}xmsg;
-
-            # create search hash
-            my $SearchHash = {
-                '[1]{\'Version\'}[1]{\''
-                    . $SearchKey
-                    . '\'}[%]{\'Content\'}' => $Values,
-            };
-            push @{ $Param{What} }, $SearchHash;
-        }
-        next ITEM if !$Item->{Sub};
-
-        # start recursion, if "Sub" was found
-        $Self->_ExportXMLSearchDataPrepare(
-            XMLDefinition => $Item->{Sub},
-            What          => $Param{What},
-            SearchData    => $Param{SearchData},
-            Prefix        => $Key,
-        );
-    }
+    
 
     return 1;
 }

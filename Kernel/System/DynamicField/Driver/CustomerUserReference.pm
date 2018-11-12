@@ -12,6 +12,8 @@ package Kernel::System::DynamicField::Driver::CustomerUserReference;
 use strict;
 use warnings;
 
+use Data::Dumper;
+
 use base qw(Kernel::System::DynamicField::Driver::Base);
 
 use Kernel::System::VariableCheck qw(:all);
@@ -448,7 +450,7 @@ sub EditFieldRender {
             color:#555;
         }
     </style>
-    <div class="Field">
+    <div class="Field $FieldClass">
         <select class="DynamicFieldText Modernize" id="$FieldName" multiple="multiple" name="$FieldName" style="display:none;" ></select>
         <input id="$AutoCompleteFieldName" type="text" name="$AutoCompleteFieldName" value="" class="$AutoCompleteFieldName W75pc $FromInvalid" autocomplete="off" />
         <div id="$AutoCompleteFieldName-ServerError" class="TooltipErrorMessage">
@@ -502,12 +504,17 @@ END
     $HTMLString .= "</div>";
 
     my $ValueCounter = 0;
-    
-
     my $ValidValue = "";
     if($ValueCounter){
        $ValidValue = '1';
     }
+
+#     $HTMLString .= <<"END";
+#     <script type="language">
+#         Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
+#         DynamicFieldCustomerUser.InitEditField("$FieldName", "$FieldID", "$MaxArraySize", "$ValueCounter", "$FieldConfig->{QueryDelay}", "$FieldConfig->{MinQueryLength}", "$ConstrictionString", "$FieldConfig->{CustomerUserInputType}");
+#     </script>
+# END
 
     $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"END");
 Core.Config.Set('DynamicFieldCustomerUser.TranslateRemoveSelection', '$TranslateRemoveSelection');
@@ -689,7 +696,11 @@ sub SearchFieldRender {
     }
 
     # check and set class if necessary
+
     my $FieldClass = '';
+    if ( defined $Param{Class} && $Param{Class} ne '' ) {
+        $FieldClass = $Param{Class};
+    }
 
     my $AutoCompleteFieldName = $FieldName . "_AutoComplete";
     my $ContainerFieldName    = $FieldName . "_Container";

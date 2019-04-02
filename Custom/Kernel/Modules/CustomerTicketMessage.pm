@@ -524,7 +524,13 @@ sub Run {
             #    Message  => " CHEGOU POR AQUI ".$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf').' COM O VALOR '.$DynamicFieldValues{$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf')}->[0].' O VALOR ANTERIOR E '.$Self->{UserLogin}.' E '.$Self->{UserCustomerID},
             #); 
 
-            $Self->{UserLogin} = $DynamicFieldValues{$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf')}->[0];
+            if($DynamicFieldValues{$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf')}){
+                if($DynamicFieldValues{$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf')}->[0]){
+                    $Self->{UserLogin} = $DynamicFieldValues{$Kernel::OM->Get('Kernel::Config')->Get('Core::DynamicFieldInTheNameOf')}->[0];
+                }
+            }
+
+            
         }
 
         

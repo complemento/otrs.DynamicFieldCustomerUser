@@ -112,6 +112,18 @@ Clique em *Deploy now*:
 
 ![Screenshot](img/img27.png)
 
+## Configurando a opção "Em nome de"
+
+Em nossa última versão do Add On 6.0.4 é possivel adicionar um campo dinâmico do tipo cliente na criação do ticket e defini-lo como responsável por selecionar o cliente para o qual se está abrindo o ticket fazendo com que o ticket possa ser aberto em nome de outra pessoa.
+
+Para isso basta acessar "Administração >> Configurações de Sistema" e clicar em "Core" no menu de Navegação.
+
+![Screenshot](img/img32.png)
+
+Nessa tela procure a opção **Core::DynamicFieldInTheNameOf** e configure definindo o nome do campo dinâmico do tipo cliente que deve ser utilizado na definição do cliente que abriu o ticket. O campo dinâmico configurado deve estar presente na tela de abertura de ticket do cliente para que a configuração funcione.
+
+![Screenshot](img/img33.png)
+
 ## Como Utilizar
 
 Após configurado o Dynamic Field surgirá na página de criação de ticket para ser utilização, clique em __Ticket -> New phone tcket (ou New email ticket):

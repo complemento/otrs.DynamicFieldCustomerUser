@@ -144,4 +144,11 @@
             </Item>
         </Value>
     </Setting>
+    <Setting Name="Core::DynamicFieldInTheNameOf" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField In The Name Of</Description>
+        <Navigation>Core</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex=""></Item>
+        </Value>
+    </Setting>
 </otrs_config>

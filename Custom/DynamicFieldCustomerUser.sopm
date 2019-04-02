@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
     <Name>DynamicFieldCustomerUser</Name>
-    <Version>6.0.3</Version>
+    <Version>6.0.4</Version>
     <Framework>6.0.x</Framework>
     <Vendor>Ligero</Vendor>
     <URL>http://www.complemento.net.br/</URL>
@@ -20,6 +20,7 @@
         <File Location="Kernel/System/Ticket/Event/CustomerUserLinkAdd.pm" Permission="644"></File>
         <File Location="var/httpd/htdocs/js/DynamicFieldCustomerUser.js" Permission="644"></File>
         <File Location="var/packagesetup/DynamicFieldCustomerUser.pm" Permission="644"></File>
+        <File Location="Custom/Kernel/Modules/CustomerTicketMessage.pm" Permission="644"></File>
     </Filelist>
     <CodeInstall>
         <![CDATA[
